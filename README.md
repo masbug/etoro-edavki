@@ -4,8 +4,7 @@
 _Konverter iz eToroAccountStatement-a v XLSX (MS Excel) obliki pripravi datoteke v XML format primerne za uvoz v eDavke:_
 * _Doh-KDVP - Napoved za odmero dohodnine od dobička od odsvojitve vrednostnih papirjev in drugih deležev ter investicijskih kuponov,_
 * _D-IFI - Napoved za odmero davka od dobička od odsvojitve izvedenih finančnih instrumentov_
-
-_Pripravi tudi XLSX tabelo za izpolnjevanje obrazca za dividende - Doh-Div._
+* _Doh-Div - Napoved za odmero dohodnine od dividend_
 
 Skripta avtomatsko naredi konverzijo tuje valute v EUR po tečaju Banke Slovenije na dan posla.
 
@@ -29,10 +28,13 @@ pip3 install --upgrade git+https://github.com/masbug/etoro-edavki.git
 etoro-edavki
 ```
 
+ali pa si prenesete že prevedeno skripto (za uporabo glej PREBERI_ME.txt):
+https://github.com/masbug/etoro-edavki/releases
+
 ### Izvoz poročila na eToro
 
 1. V meniju odpri **Portfolio**
-2. Na desne od menija poleg besede **Portfolio** klikni na "urico" (_history_).
+2. Desno od menija poleg besede **Portfolio** klikni na "urico" (_history_).
 3. V history pogledu klikni na zobnik skrajno desno in izberi "Account statement".
 4. Vpiši začetni datum (01/01/_prejšnje leto_) in končni datum (01/01/_to leto_).
 5. Klikni na kljukico za potrditev.
@@ -41,21 +43,24 @@ etoro-edavki
 ### Konverzija poročila v popisne liste primerne za uvoz v eDavke
 
 ```
-etoro-edavki [-h] [-y report-year] eToroAccountStatement-2021.xlsx
+etoro-edavki [-h] [-c] [-y report-year] eToroAccountStatement-2021.xlsx
 ```
 Argumenti:
 *    -y: ročno izbere leto za katero se naj XMLji izvozijo (debugging)
+*    -c: vključi tudi "real" kripto pozicije v napovedi (CFD so vedno vključene)
 *    eToroAccountStatement-2021.xlsx: datoteka, ki jo prenesemo iz eToro
 
 #### Postopek
 Skripta najprej avtomatsko prenese tabelo za konverzijo valut, nato v mapi output ustvari 4 datoteke:
 * **Doh-KDVP.xml** (datoteka namenjena uvozu v obrazec **Doh-KDVP** - Napoved za odmero dohodnine od dobička od odsvojitve vrednostnih papirjev in drugih deležev ter investicijskih kuponov)
 * **D-IFI.xml** (datoteka namenjena uvozu v obrazec **D-IFI** - Napoved za odmero davka od dobička od odsvojitve izvedenih finančnih instrumentov)
-* **Dividende-**_leto_**.xlsx** (datoteka je v pomoč pri izpolnjevanju obrazca **Doh-Div** - Napoved za odmero dohodnine od dividend)
-* Debug-_leto_.xlsx (kontrolna datoteka)
+* **Doh-Div.xml** (datoteka namenjena uvozu v obrazec **Doh-Div**)
 
-#### Obrazec Doh-Div (opcijsko)
-Obrazec Doh-Div zahteva dodatne podatke o podjetju, ki je izplačalo dividende (identifikacijska številka, naslov, ...), ki jih v izvirnih podatkih eTora ni. Te podatke je potrebno ročno poiskati. V pomoč se iz trgovalne kode avtomatsko generirajo spletne povezave, ki pa včasih niso pravilne - zato pozor!
+* **Dividende-info-**_leto_**.xlsx** (kontrolna datoteka; v pomoč pri hitrem pregledu manjkajočih podatkov za generiranje Doh-Div)
+* Debug-_leto_.xlsx (kontrolna datoteka za Doh-KDVP, D-IFI)
+
+#### Obrazec Doh-Div
+Obrazec Doh-Div zahteva dodatne podatke o podjetju, ki je izplačalo dividende (identifikacijska številka, naslov, ISIN), ki jih v izvirnih podatkih eTora ni. Te podatke je potrebno ročno poiskati in dopisati v Naslovi_info.xlsx.
 Prav tako eToro v poročilu ne zapiše odvedenega davka od dividend (_witholding tax_), za katerega lahko uveljavljamo olajšavo. Izpisek plačanega davka od dividend lahko zahtevate od eToro preko supporta. Pri uveljavljanju olajšave za že odvedeni davek v tujini, je potrebno na eDavkih specificirati mednarodno pogodbo od preprečevanju dvojnega obdavčevanja in člen. Za pomoč pri pogodbah je tabela:
 - https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/
 

@@ -80,14 +80,28 @@ class CryptoInfoSheet(TableSheet):
 class CryptoWorkbook(TemplatedWorkbook):
     info = CryptoInfoSheet(sheetname='Info')
 
+class CompanyInfoSheet(TableSheet):
+    symbol = CharColumn(header='Symbol')
+    ISIN = CharColumn(header='ISIN')
+    name = CharColumn(header='Name')
+    address = CharColumn(header='Address')
+    country_code = CharColumn(header='CountryCode')
+
+class CompanyWorkbook(TemplatedWorkbook):
+    info = CompanyInfoSheet(sheetname='Info')
+
+
 class DividendsSheet(TableSheet):
-    date = CharColumn(header="Date")
-    symbol = CharColumn(header="Symbol")
-    name = CharColumn(header="Company/Name", width=60)
+    skipped = CharColumn(header="Skipped", width=7)
+    date = CharColumn(header="Date", width=12)
+    symbol = CharColumn(header="Symbol", width=12)
+    ISIN = CharColumn(header="ISIN")
+    name = CharColumn(header="Company/Name", width=50)
+    address = CharColumn(header="Address", width=65)
+    country = CharColumn(header="CountryCode", width=7)
     dividend_eur = CharColumn(header="Dividend [EUR]")
-    currency = CharColumn(header="Orig. currency")
-    position_ids = CharColumn(header="Position ID(s)")
-    link = CharColumn(header="Info link", width=60, cell_style="hyperlink")
+    #currency = CharColumn(header="Orig. currency")
+    position_ids = CharColumn(header="Position ID(s)", width=100)
 
 class DividendsWorkbook(TemplatedWorkbook):
     dividends = DividendsSheet()
@@ -130,6 +144,13 @@ def is_crypto(name, symbol, cryptoList):
         if crypto.name.lower() == name or crypto.symbol == symbol:
             return True
     return False
+
+def get_company_info(symbol, companyList):
+    symbol = symbol.upper()
+    for companyInfo in companyList:
+        if companyInfo.symbol == symbol:
+            return companyInfo
+    return None
 
 def str2float(num):
     global float_with_comma
@@ -823,7 +844,12 @@ def main():
     for dividend in dividends:
         merged = False
         for mergedDividend in mergedDividends:
-            if dividend["date"].date() == mergedDividend["date"].date() and dividend["symbol"] == mergedDividend["symbol"]:
+            if \
+                dividend["date"].date() == mergedDividend["date"].date() \
+                and dividend["symbol"] == mergedDividend["symbol"] \
+                and mergedDividend["amount_eur"]>=0 \
+                and dividend["amount_eur"]>=0 \
+            :
                 mergedDividend["amount_eur"] = mergedDividend["amount_eur"] + dividend["amount_eur"]
                 if "positions" in mergedDividend:
                     mergedDividend["positions"].append(dividend["position_id"])
@@ -835,57 +861,91 @@ def main():
             mergedDividends.append(dividend)
     dividends = mergedDividends
 
-    print("")
+    """ Load company info """
+    companyList = list(CompanyWorkbook(file="Naslovi_info.xlsx").info.read())
 
-    rows = []
-    trimonth = -1
-    table = prettytable.PrettyTable(["Date", "Symbol", "Company/Name", "Dividend [EUR]", "Orig. currency", "Position ID(s)", "Info link"])
+    """ Add missing data """
+    missing_info = []
     for dividend in dividends:
-        # if int((dividend["date"].month-1)/3) != trimonth:
-        #     trimonth = int((dividend["date"].month-1)/3)
-        #     table.add_row([
-        #         "{0}. trimesečje".format(trimonth+1),
-        #         "------",
-        #         "-------------------------------",
-        #         "--------------",
-        #         "--------------",
-        #         "--------------",
-        #         "---------------------------------------"
-        #     ])
+        companyInfo = get_company_info(dividend["symbol"], companyList)
+
+        if companyInfo is not None:
+            dividend["ISIN"] = companyInfo.ISIN
+            dividend["name"] = companyInfo.name
+            dividend["address"] = companyInfo.address
+            dividend["country"] = companyInfo.country_code
+        else:
+            missing_info.append(dividend["symbol"])
 
 
+    """ Generate Doh-Div.xml """
+    envelope = xml.etree.ElementTree.Element("Envelope", xmlns="http://edavki.durs.si/Documents/Schemas/Doh_Div_3.xsd")
+    envelope.set("xmlns:edp", "http://edavki.durs.si/Documents/Schemas/EDP-Common-1.xsd")
+    header = xml.etree.ElementTree.SubElement(envelope, "edp:Header")
+    xml.etree.ElementTree.SubElement(header, "edp:taxpayer")
+    xml.etree.ElementTree.SubElement(envelope, "edp:AttachmentList")
+    xml.etree.ElementTree.SubElement(envelope, "edp:Signatures")
+
+    body = xml.etree.ElementTree.SubElement(envelope, "body")
+    Doh_Div = xml.etree.ElementTree.SubElement(body, "Doh_Div")
+    xml.etree.ElementTree.SubElement(Doh_Div, "Period").text = str(reportYear)
+
+    for dividend in dividends:
+        if round(dividend["amount_eur"], 2) <= 0:
+            dividend["skipped"] = "YES"
+            continue
+
+        Dividend = xml.etree.ElementTree.SubElement(body, "Dividend")
+        xml.etree.ElementTree.SubElement(Dividend, "Date").text = dividend["date"].strftime(EDAVKI_DATETIME_FORMAT)
+
+        if "ISIN" in dividend:
+            xml.etree.ElementTree.SubElement(Dividend, "PayerIdentificationNumber").text = dividend["ISIN"]
+        if "name" in dividend and dividend["name"] != "":
+            xml.etree.ElementTree.SubElement(Dividend, "PayerName").text = dividend["name"]
+        else:
+            xml.etree.ElementTree.SubElement(Dividend, "PayerName").text = dividend["symbol"]
+        if "address" in dividend:
+            xml.etree.ElementTree.SubElement(Dividend, "PayerAddress").text = dividend["address"]
+        if "country" in dividend:
+            xml.etree.ElementTree.SubElement(Dividend, "PayerCountry").text = dividend["country"]
+        xml.etree.ElementTree.SubElement(Dividend, "Type").text = "1"
+        xml.etree.ElementTree.SubElement(Dividend, "Value").text = "{0:.2f}".format(dividend["amount_eur"])
+        xml.etree.ElementTree.SubElement(Dividend, "ForeignTax").text = "{0:.2f}".format(0.0)
+        if "country" in dividend:
+            xml.etree.ElementTree.SubElement(Dividend, "SourceCountry").text = dividend["country"]
+        #if "reliefStatement" in dividend:
+        #    xml.etree.ElementTree.SubElement(Dividend, "ReliefStatement").text = dividend["reliefStatement"]
+        #else:
+        xml.etree.ElementTree.SubElement(Dividend, "ReliefStatement").text = ""
+
+    xmlString = xml.etree.ElementTree.tostring(envelope)
+    prettyXmlString = minidom.parseString(xmlString).toprettyxml(indent="\t")
+    with open("output/Doh-Div.xml", "w", encoding="utf-8") as f:
+        f.write(prettyXmlString)
+        print("output/Doh-Div.xml created")
+
+
+
+    ###################
+    ###################
+    ###################
+    """ Debug output """
+    rows = []
+    for dividend in dividends:
         row = [
+            (dividend["skipped"] if "skipped" in dividend else ""),
             dividend["date"].strftime(EDAVKI_DATETIME_FORMAT),
             dividend["symbol"],
+            (dividend["ISIN"] if "ISIN" in dividend else ""),
             (dividend["name"] if not dividend["name"] is None else ""),
+            (dividend["address"] if "address" in dividend else ""),
+            (dividend["country"] if "country" in dividend else ""),
             "{0:.4f}".format(dividend["amount_eur"]),
-            dividend["currency"],
-            dividend["position_id"] if not "positions" in dividend else ", ".join(map(str, dividend["positions"])),
-            "https://app.ft.com/tearsheet/{0}/profile".format(dividend["symbol"])
+            #dividend["currency"],
+            dividend["position_id"] if not "positions" in dividend else ", ".join(map(str, dividend["positions"]))
         ]
         rows.append(row)
-        table.add_row(row)
 
-    table.align["Date"] = "r"
-    table.align["Symbol"] = "l"
-    table.align["Company/Name"] = "l"
-    table.align["Dividend [EUR]"] = "r"
-    table.align["Position ID(s)"] = "l"
-    table.align["Info link"] = "l"
-    #table.float_format["Dividend [EUR]"] = ".4"
-    print(table)
-
-    """
-    for dividend in dividends:
-        print("{2}:\tSymbol: {4},\t\tDividend: {0:.4f} EUR (orig: {5}),\t\tCompany: {1},\t\tPosition ID(s): {3}".format(
-            dividend["amount_eur"],
-            (dividend["name"] if not dividend["name"] is None else ""),
-            dividend["date"].strftime(EDAVKI_DATETIME_FORMAT),
-            dividend["position_id"] if not "positions" in dividend else ", ".join(map(str, dividend["positions"])),
-            dividend["symbol"],
-            dividend["currency"]))
-            
-    """
 
     """ Save dividend info to XLS """
     wb = DividendsWorkbook(template_styles=DefaultStyleSet(
@@ -895,14 +955,27 @@ def main():
         objects=rows
     )
 
-    filename = "output/Dividende-{0}.xlsx".format(reportYear)
+    filename = "output/Dividende-info-{0}.xlsx".format(reportYear)
     wb.save(filename)
     print("{0} created ".format(filename))
 
+    print("\n------------------------------------------------------------------------------------------------------------------------------------")
     print("\neToro ne razkrije količino davka, ki je avtomatsko odveden v državi iz katere izhaja dividenda. Vse dividende\n"
-          "v eToro izpisu so neto. Za olajšavo pri eDavkih je potrebno izračunat koliko davka je bilo odvedenega in pripisat\n"
-          "konvencijo (UL, št.) o preprečevanju dvojnega obdavčevanja. Za davek po državah in konvencije glej KIDO_info.xlsx.\n\n"
+          "v eToro izpisu so neto. Za uveljavljanje olajšave pri eDavkih, je potrebno izračunat koliko davka je bilo odvedenega,\n"
+          "pripisat konvencijo (MP, št., člen, odstavek) o preprečevanju dvojnega obdavčevanja in priložiti dokazila o plačanem davku...\n"
+          "Za davek po državah in konvencije glej:\n"
+          "https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/.\n\n"
           "Dodatni info: https://www.etoro.com/customer-service/help/1484910272/how-much-tax-is-deducted-from-my-dividends/")
+
+    if missing_info:
+        s = ", ".join(missing_info)
+        print("\n\n")
+        print("------------------------------------------------------------------------------------------------------------------------------------")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("Manjkajo podatki o podjetjih za sledeče delnice: {0}\n".format(s))
+        print("Dodaj podatke v Naslovi_info.xlsx in ponovno poženi konverzijo! (Lahko nadaljuješ z oddajo, vendar bo potrebno te podatke ročno vnesti na eDavki.)")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("------------------------------------------------------------------------------------------------------------------------------------")
 
     sys.exit(0)
 
