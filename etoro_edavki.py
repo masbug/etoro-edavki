@@ -200,8 +200,28 @@ def main():
 
     test = args.t
 
+
+    if not os.path.isfile("taxpayer.xml"):
+        print("Modify taxpayer.xml and add your data first!")
+        f = open("taxpayer.xml", "w+", encoding="utf-8")
+        f.write(
+            "<taxpayer>\n"
+            "   <taxNumber>12345678</taxNumber>\n"
+            "   <taxpayerType>FO</taxpayerType>\n"
+            "</taxpayer>"
+        )
+        exit(0)
+
     if not os.path.isdir("output"):
         os.mkdir("output")
+
+
+    """ Parse taxpayer information from the local taxpayer.xml file """
+    taxpayer = xml.etree.ElementTree.parse("taxpayer.xml").getroot()
+    taxpayerConfig = {
+        "taxNumber": taxpayer.find("taxNumber").text,
+        "taxpayerType": "FO",
+    }
 
     """ Creating daily exchange rates object """
     bsRateXmlFilename = ("bsrate-" + str(datetime.date.today().year) + str(datetime.date.today().month) + str(datetime.date.today().day) + ".xml")
@@ -882,7 +902,14 @@ def main():
     envelope = xml.etree.ElementTree.Element("Envelope", xmlns="http://edavki.durs.si/Documents/Schemas/Doh_Div_3.xsd")
     envelope.set("xmlns:edp", "http://edavki.durs.si/Documents/Schemas/EDP-Common-1.xsd")
     header = xml.etree.ElementTree.SubElement(envelope, "edp:Header")
-    xml.etree.ElementTree.SubElement(header, "edp:taxpayer")
+    taxpayer = xml.etree.ElementTree.SubElement(header, "edp:taxpayer")
+    xml.etree.ElementTree.SubElement(taxpayer, "edp:taxNumber").text = taxpayerConfig["taxNumber"]
+    xml.etree.ElementTree.SubElement(taxpayer, "edp:taxpayerType").text = taxpayerConfig["taxpayerType"]
+    Workflow = xml.etree.ElementTree.SubElement(header, "edp:Workflow")
+    if test:
+        xml.etree.ElementTree.SubElement(Workflow, "edp:DocumentWorkflowID").text = "I"
+    else:
+        xml.etree.ElementTree.SubElement(Workflow, "edp:DocumentWorkflowID").text = "O"
     xml.etree.ElementTree.SubElement(envelope, "edp:AttachmentList")
     xml.etree.ElementTree.SubElement(envelope, "edp:Signatures")
 
@@ -951,9 +978,10 @@ def main():
     wb = DividendsWorkbook(template_styles=DefaultStyleSet(
         NamedStyle(name="hyperlink")
     ))
-    wb.dividends.write(
-        objects=rows
-    )
+    if len(rows) > 0:
+        wb.dividends.write(
+            objects=rows
+        )
 
     filename = "output/Dividende-info-{0}.xlsx".format(reportYear)
     wb.save(filename)
