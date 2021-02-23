@@ -997,7 +997,7 @@ def main():
           "Dodatni info: https://www.etoro.com/customer-service/help/1484910272/how-much-tax-is-deducted-from-my-dividends/")
 
     if missing_info:
-        s = ", ".join(missing_info)
+        s = ", ".join(set(missing_info))
         print("\n\n")
         print("------------------------------------------------------------------------------------------------------------------------------------")
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
