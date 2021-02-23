@@ -824,6 +824,7 @@ def main():
                 openPositions[position_id] = open_pos
                 continue
 
+        for xlsTransaction in transactionSheet:
             if xlsTransaction.details.find("dividend") < 0:
                 continue
 
