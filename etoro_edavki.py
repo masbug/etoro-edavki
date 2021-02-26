@@ -838,6 +838,11 @@ def main():
             rate = get_exchange_rate(rates, date, ETORO_CURRENCY)
             amount_eur = str2float(xlsTransaction.amount) / rate
 
+            if (openPositions.get(position_id) == None):
+                print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarju [openPositions]!".format(position_id))
+                print("                    Verjetno vhodna datoteka ne zajema ceotnega obdobja obdelanih finančnih instrumentov.")
+                sys.exit(1)
+
             open_pos = openPositions[position_id]
             symbol = open_pos["symbol"]
 
