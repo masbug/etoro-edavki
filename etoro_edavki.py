@@ -7,8 +7,8 @@ import datetime
 import os
 import glob
 import argparse
-import locale
-import prettytable
+#import locale
+#import prettytable
 from xml.dom import minidom
 
 from openpyxl import Workbook
@@ -20,9 +20,8 @@ from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
-ETORO_DATETIME_FORMAT_EN = "%d/%m/%Y %H:%M"
-ETORO_DATETIME_FORMAT_SL = "%d.%m.%Y %H:%M"
-ETORO_TRANSACTION_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+ETORO_DATETIME_FORMAT_EN = "%d/%m/%Y %H:%M:%S"
+ETORO_DATETIME_FORMAT_SL = "%d.%m.%Y %H:%M:%S"
 ETORO_CURRENCY = "USD"
 
 bsRateXmlUrl = "https://www.bsi.si/_data/tecajnice/dtecbs-l.xml"
@@ -34,43 +33,54 @@ dividendMarker = "Payment caused by dividend"
 float_with_comma = False
 
 class ClosedPositionsSheet(TableSheet):
-    # Position ID	Action	Copy Trader Name	Amount	Units	Open Rate	Close Rate	Spread	Profit	Open Date	Close Date	Take Profit Rate	Stop Loss Rate	Rollover Fees And Dividends	Is Real	Leverage	Notes
+    # 2022: Position ID	Action	Amount	Units	Open Date	Close Date	Leverage	Spread	Profit	Open Rate	Close Rate	Take profit rate	Stop lose rate	Rollover Fees and Dividends	Copied From	Type	ISIN	Notes
     position_id = CharColumn(header="Position ID")
     action = CharColumn(header="Action")
-    trader = CharColumn(header="Copy Trader Name")
     amount = CharColumn(header="Amount")
     units = CharColumn(header="Units")
-    open_rate = CharColumn(header="Open Rate")
-    close_rate = CharColumn(header="Close Rate")
-    spread = CharColumn(header="Spread")
-    profit = CharColumn(header="Profit")
     open_date = CharColumn(header="Open Date")
     close_date = CharColumn(header="Close Date")
-    take_profit_rate = CharColumn(header="Take Profit Rate")
-    stop_loss_rate = CharColumn(header="Stop Loss Rate")
-    rollover_fees_and_dividends = CharColumn(header="Rollover Fees And Dividends")
-    is_real = CharColumn(header="Is Real")
     leverage = CharColumn(header="Leverage")
+    spread = CharColumn(header="Spread")
+    profit = CharColumn(header="Profit")
+    open_rate = CharColumn(header="Open Rate")
+    close_rate = CharColumn(header="Close Rate")
+    take_profit_rate = CharColumn(header="Take profit rate")
+    stop_loss_rate = CharColumn(header="Stop lose rate")
+    rollover_fees_and_dividends = CharColumn(header="Rollover Fees and Dividends")
+    trader = CharColumn(header="Copied From")
+    type = CharColumn(header="Type")
+    isin = CharColumn(header="ISIN")
     notes = CharColumn(header="Notes")
 
-
 class TransactionsReportSheet(TableSheet):
-    # Date	Account Balance	Type	Details	Position ID	Amount	Realized Equity Change	Realized Equity	NWA
+    # 2022: Date	Type	Details	Amount	Realized Equity Change	Realized Equity	Balance	Position ID	NWA
     date = CharColumn(header="Date")
-    account_balance = CharColumn(header="Account Balance")
     type = CharColumn(header="Type")
     details = CharColumn(header="Details")
-    position_id = CharColumn(header="Position ID")
     amount = CharColumn(header="Amount")
     realized_equity_change = CharColumn(header="Realized Equity Change")
     realized_equity = CharColumn(header="Realized Equity")
+    account_balance = CharColumn(header="Balance")
+    position_id = CharColumn(header="Position ID")
     nwa = CharColumn(header="NWA")
 
+class DividendsSheet(TableSheet):
+    # Date of Payment	Instrument Name	Net Dividend Received (USD)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)	Position ID	Type	ISIN
+    date = CharColumn(header="Date of Payment")
+    name = CharColumn(header="Instrument Name")
+    net_dividend = CharColumn(header="Net Dividend Received (USD)")
+    withholding_tax_rate = CharColumn(header="Withholding Tax Rate (%)")
+    withholding_tax_amount = CharColumn(header="Withholding Tax Amount (USD)")
+    position_id = CharColumn(header="Position ID")
+    type = CharColumn(header="Type")
+    isin = CharColumn(header="ISIN")
 
 class EToroWorkbook(TemplatedWorkbook):
     # account_details = TemplatedWorksheet(sheetname='Account Details')
     closed_positions = ClosedPositionsSheet(sheetname='Closed Positions')
-    transactions = TransactionsReportSheet(sheetname='Transactions Report')
+    transactions = TransactionsReportSheet(sheetname='Account Activity')
+    dividends = DividendsSheet(sheetname='Dividends')
     # summary = TemplatedWorksheet(sheetname='Financial Summary')
 
 class CryptoInfoSheet(TableSheet):
@@ -91,7 +101,7 @@ class CompanyWorkbook(TemplatedWorkbook):
     info = CompanyInfoSheet(sheetname='Info')
 
 
-class DividendsSheet(TableSheet):
+class DividendsOutputSheet(TableSheet):
     skipped = CharColumn(header="Skipped", width=7)
     date = CharColumn(header="Date", width=12)
     symbol = CharColumn(header="Symbol", width=12)
@@ -103,8 +113,8 @@ class DividendsSheet(TableSheet):
     #currency = CharColumn(header="Orig. currency")
     position_ids = CharColumn(header="Position ID(s)", width=100)
 
-class DividendsWorkbook(TemplatedWorkbook):
-    dividends = DividendsSheet()
+class DividendsOutputWorkbook(TemplatedWorkbook):
+    dividends = DividendsOutputSheet()
 
 def get_exchange_rate(rates, trade_date, currency):
     date = trade_date.strftime("%Y%m%d")
@@ -137,6 +147,26 @@ def get_position_symbols(transactionList):
             syms[position_id] = details_split[0].upper()
     return syms
 
+def update_position_symbols_from_dividends(dividendsList, companyList, syms):
+    for diviSheet in dividendsList:
+        if diviSheet is None:
+            continue
+
+        for xlsDividend in diviSheet:
+            position_id = int(xlsDividend.position_id)
+            if syms.get(position_id) is not None:
+                continue
+
+            companyInfo = get_company_info_by_isin(xlsDividend.isin, companyList)
+            if companyInfo is None:
+                print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarjih [openPositions, Company_info.xlxs]!".format(position_id))
+                print("                    Izvozi account statement za daljše obdobje oz. dodaj podatke za [ISIN={0}] v Company_info.xlxs.".format(xlsDividend.isin))
+                sys.exit(1)
+
+            syms[position_id] = companyInfo.symbol
+            # DEBUG print("!!! Found {0}: {1}, {2}".format(position_id, companyInfo.symbol, companyInfo.name))
+    return syms
+
 def is_crypto(name, symbol, cryptoList):
     name = name.lower()
     symbol = symbol.upper()
@@ -149,6 +179,12 @@ def get_company_info(symbol, companyList):
     symbol = symbol.upper()
     for companyInfo in companyList:
         if companyInfo.symbol == symbol:
+            return companyInfo
+    return None
+
+def get_company_info_by_isin(isin, companyList):
+    for companyInfo in companyList:
+        if companyInfo.ISIN == isin:
             return companyInfo
     return None
 
@@ -242,17 +278,22 @@ def main():
 
     """ Load crypto info """
     if not reportCryptos:
-        cryptoList = list(CryptoWorkbook(file="Kripto_info.xlsx").info.read())
+        cryptoList = list(CryptoWorkbook(file="Crypto_info.xlsx").info.read())
     else:
         cryptoList = []
+
+    """ Load company info """
+    companyList = list(CompanyWorkbook(file="Company_info.xlsx").info.read())
 
     """ Parsing of XLSX files """
     tradesList = []
     transactionList = []
+    dividendsList = []
     for filename in inputFilenames:
         wb = EToroWorkbook(file=filename)
         tradesList.append(list(wb.closed_positions.read()))
         transactionList.append(list(wb.transactions.read()))
+        dividendsList.append(list(wb.dividends.read()))
 
     statementStartDate = datetime.datetime(year=reportYear, month=1, day=1)
     statementEndDate = datetime.datetime(year=reportYear, month=12, day=31)
@@ -270,6 +311,7 @@ def main():
     allTradesByPositionID = {}
     allTradesBySymbol = {}
     positionSymbols = get_position_symbols(transactionList)
+    positionSymbols = update_position_symbols_from_dividends(dividendsList, companyList, positionSymbols)
     for tradeSheet in tradesList:
         if tradeSheet is None:
             continue
@@ -280,16 +322,15 @@ def main():
                 try:
                     datetime.datetime.strptime(xlsTrade.close_date, ETORO_DATETIME_FORMAT_EN)
                     ETORO_DATETIME_FORMAT = ETORO_DATETIME_FORMAT_EN
-                except:
+                except ValueError:
                     try:
                         datetime.datetime.strptime(xlsTrade.close_date, ETORO_DATETIME_FORMAT_SL)
                         ETORO_DATETIME_FORMAT = ETORO_DATETIME_FORMAT_SL
                         float_with_comma = True
-                    except:
+                    except ValueError:
                         print("ERROR: Could not determine eToro DATETIME format!")
                         sys.exit(-1)
 
-            # Position ID	Action	Copy Trader Name	Amount	Units	Open Rate	Close Rate	Spread	Profit	Open Date	Close Date	Take Profit Rate	Stop Loss Rate	Rollover Fees And Dividends	Is Real	Leverage	Notes
             close_date = datetime.datetime.strptime(xlsTrade.close_date, ETORO_DATETIME_FORMAT)
             if close_date.year != reportYear:
                 # print("Skipping trade (year: " + str(close_date.year) + "): " + str(xlsTrade))
@@ -309,7 +350,7 @@ def main():
                 symbol = name[0:3]+name[4:]
 
             is_etf = name.find(" ETF") >= 0
-            ifi_type = xlsTrade.is_real
+            ifi_type = xlsTrade.type
 
             try:
                 leverage = int(xlsTrade.leverage) if xlsTrade.leverage is not None else 0
@@ -347,7 +388,7 @@ def main():
                 print("ERROR: Could not determine position type! ")
                 sys.exit(-1)
 
-            if xlsTrade.is_real == "Real":
+            if xlsTrade.type == "Real":
                 asset_type = "normal"
             else:
                 asset_type = "derivate"
@@ -364,6 +405,7 @@ def main():
                 "quantity": units,
                 "trade_date": open_date,
                 "trade_price_eur": open_price_eur,
+                "isin": xlsTrade.isin,
 
                 # extra info
                 "open_price_eur": open_price_eur,
@@ -384,6 +426,7 @@ def main():
                 "quantity": -units,
                 "trade_date": close_date,
                 "trade_price_eur": close_price_eur,
+                "isin": xlsTrade.isin,
 
                 # extra info
                 "open_price_eur": open_price_eur,
@@ -458,12 +501,14 @@ def main():
     """ Save debug info to XLS """
     wb = Workbook()
     sh = wb.create_sheet(title="Normal (long)")
+    sh.append([ "Symbol", "Name", "ISIN", "Is ETF", "Action", "Trade date", "Quantity", "Trade price (EUR)" ])
     for securityID in longNormalTrades:
         trades = longNormalTrades[securityID]
         for trade in trades:
             sh.append([
                 trade["symbol"],
                 trade["name"],
+                trade["isin"],
                 "true" if trades[0]["is_etf"] else "false",
                 "Open" if trade["quantity"] > 0 else "Close",
                 trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT),
@@ -472,12 +517,14 @@ def main():
             ])
 
     sh = wb.create_sheet(title="Derivate (long)")
+    sh.append([ "Symbol", "Name", "ISIN", "Is ETF", "Action", "Trade date", "Quantity", "Trade price (EUR)" ])
     for securityID in longDerivateTrades:
         trades = longDerivateTrades[securityID]
         for trade in trades:
             sh.append([
                 trade["symbol"],
                 trade["name"],
+                trade["isin"],
                 "true" if trades[0]["is_etf"] else "false",
                 "Open" if trade["quantity"] > 0 else "Close",
                 trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT),
@@ -487,12 +534,14 @@ def main():
 
 
     sh = wb.create_sheet(title="Derivate (short)")
+    sh.append([ "Symbol", "Name", "ISIN", "Is ETF", "Action", "Trade date", "Quantity", "Trade price (EUR)" ])
     for securityID in shortDerivateTrades:
         trades = shortDerivateTrades[securityID]
         for trade in trades:
             sh.append([
                 trade["symbol"],
                 trade["name"],
+                trade["isin"],
                 "true" if trades[0]["is_etf"] else "false",
                 "Open" if trade["quantity"] > 0 else "Close",
                 trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT),
@@ -502,13 +551,13 @@ def main():
 
 
     sh = wb.create_sheet(title="Skipped crypto")
+    sh.append([ "Symbol", "Name", "Action", "Trade date", "Quantity", "Trade price (EUR)" ])
     for securityID in skippedCryptoTrades:
         trades = skippedCryptoTrades[securityID]
         for trade in trades:
             sh.append([
                 trade["symbol"],
                 trade["name"],
-                "true" if trades[0]["is_etf"] else "false",
                 "Open" if trade["quantity"] > 0 else "Close",
                 trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT),
                 trade["quantity"] if trade["quantity"] >= 0 else -trade["quantity"],
@@ -664,12 +713,13 @@ def main():
         trades = skippedCryptoTrades[securityID]
         ids = []
         name = trades[0]["name"]
+        symbol = trades[0]["symbol"]
         for trade in trades:
             if trade["position_id"] not in ids:
                 ids.append(trade["position_id"])
 
         ids = ','.join(map(str, ids))
-        print("Crypto: skipped {0} ({1})".format(name, ids))
+        print("Crypto: skipped {0}/{1} ({2})".format(name, symbol, ids))
 
     print("")
 
@@ -801,69 +851,108 @@ def main():
     ###########
 
     """ Get dividends from XLSX """
-    openPositions = {}
     dividends = []
-    for transactionSheet in transactionList:
-        if transactionSheet is None:
+
+    for diviSheet in dividendsList:
+        if diviSheet is None:
             continue
 
-        for xlsTransaction in transactionSheet:
-            # Date	Account Balance	Type	Details	Position ID	Amount	Realized Equity Change	Realized Equity	NWA
-            if xlsTransaction.details is None:
-                continue
-
-            if xlsTransaction.type == "Open Position" or xlsTransaction.type == "Profit/Loss of Trade":
-                details_split = xlsTransaction.details.split("/", 1)
-                position_id = int(xlsTransaction.position_id)
-
-                open_pos = {
-                    "date": datetime.datetime.strptime(xlsTransaction.date, ETORO_TRANSACTION_DATETIME_FORMAT),
-                    "symbol": details_split[0].upper(),
-                    "currency": details_split[1]
-                }
-                openPositions[position_id] = open_pos
-                continue
-
-        for xlsTransaction in transactionSheet:
-            if xlsTransaction.details.find("dividend") < 0:
-                continue
-
-            date = datetime.datetime.strptime(xlsTransaction.date, ETORO_TRANSACTION_DATETIME_FORMAT)
+        for xlsDividend in diviSheet:
+            # Date of Payment	Instrument Name	Net Dividend Received (USD)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)	Position ID	Type	ISIN
+            date = datetime.datetime.strptime(xlsDividend.date, ETORO_DATETIME_FORMAT)
             if date.year != reportYear:
-                # print("Skipping dividend (year: " + str(date.year) + "): " + str(xlsTransaction))
+                # print("Skipping dividend (year: " + str(date.year) + "): " + str(xlsDividend))
                 continue
 
-            position_id = int(xlsTransaction.position_id)
+            position_id = int(xlsDividend.position_id)
+            symbol = positionSymbols.get(position_id)
 
             rate = get_exchange_rate(rates, date, ETORO_CURRENCY)
-            amount_eur = str2float(xlsTransaction.amount) / rate
+            net_amount_eur = str2float(xlsDividend.net_dividend) / rate
+            withholding_tax_rate = int("".join(filter(str.isdigit, xlsDividend.withholding_tax_rate))) / 100.0
+            withholding_tax_amount = str2float(xlsDividend.withholding_tax_amount) / rate
 
-            if (openPositions.get(position_id) == None):
-                print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarju [openPositions]!".format(position_id))
-                print("                    Verjetno vhodna datoteka ne zajema ceotnega obdobja obdelanih finančnih instrumentov.")
+            if symbol is None:
+                print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarju [positionSymbols]!".format(position_id))
+                print("                    Verjetno vhodna datoteka ne zajema celotnega obdobja obdelanih finančnih instrumentov.")
                 sys.exit(1)
-
-            open_pos = openPositions[position_id]
-            symbol = open_pos["symbol"]
-
-            name = None
-            if position_id in allTradesByPositionID:
-                info = allTradesByPositionID[position_id]
-                name = info["name"]
-            if name is None and symbol in allTradesBySymbol:
-                info = allTradesBySymbol[symbol]
-                name = info["name"]
-
 
             dividend = {
                 "position_id": position_id,
-                "amount_eur": amount_eur,
+                "net_amount_eur": net_amount_eur,
+                "withholding_tax_amount": withholding_tax_amount,
+                "withholding_tax_rate": withholding_tax_rate,
                 "date": date,
-                "name": name,
+                "name": xlsDividend.name,
                 "symbol": symbol,
-                "currency": open_pos["currency"],
+                "currency": "USD",
+                "ISIN": xlsDividend.isin
             }
+
             dividends.append(dividend)
+
+    ## Old version
+    # openPositions = {}
+    # for transactionSheet in transactionList:
+    #     if transactionSheet is None:
+    #         continue
+    #
+    #     for xlsTransaction in transactionSheet:
+    #         # Date	Account Balance	Type	Details	Position ID	Amount	Realized Equity Change	Realized Equity	NWA
+    #         if xlsTransaction.details is None:
+    #             continue
+    #
+    #         if xlsTransaction.type == "Open Position" or xlsTransaction.type == "Profit/Loss of Trade":
+    #             details_split = xlsTransaction.details.split("/", 1)
+    #             position_id = int(xlsTransaction.position_id)
+    #
+    #             open_pos = {
+    #                 "date": datetime.datetime.strptime(xlsTransaction.date, ETORO_DATETIME_FORMAT),
+    #                 "symbol": details_split[0].upper(),
+    #                 "currency": details_split[1]
+    #             }
+    #             openPositions[position_id] = open_pos
+    #             continue
+    #
+    #         if xlsTransaction.details.casefold().find("dividend") < 0:
+    #             continue
+    #
+    #         date = datetime.datetime.strptime(xlsTransaction.date, ETORO_DATETIME_FORMAT)
+    #         if date.year != reportYear:
+    #             # print("Skipping dividend (year: " + str(date.year) + "): " + str(xlsTransaction))
+    #             continue
+    #
+    #         position_id = int(xlsTransaction.position_id)
+    #
+    #         rate = get_exchange_rate(rates, date, ETORO_CURRENCY)
+    #         amount_eur = str2float(xlsTransaction.amount) / rate
+    #
+    #         if openPositions.get(position_id) is None:
+    #             print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarju [openPositions]!".format(position_id))
+    #             print("                    Verjetno vhodna datoteka ne zajema celotnega obdobja obdelanih finančnih instrumentov.")
+    #             sys.exit(1)
+    #
+    #         open_pos = openPositions[position_id]
+    #         symbol = open_pos["symbol"]
+    #
+    #         name = None
+    #         if position_id in allTradesByPositionID:
+    #             info = allTradesByPositionID[position_id]
+    #             name = info["name"]
+    #         if name is None and symbol in allTradesBySymbol:
+    #             info = allTradesBySymbol[symbol]
+    #             name = info["name"]
+    #
+    #
+    #         dividend = {
+    #             "position_id": position_id,
+    #             "amount_eur": amount_eur,
+    #             "date": date,
+    #             "name": name,
+    #             "symbol": symbol,
+    #             "currency": open_pos["currency"],
+    #         }
+    #         dividends.append(dividend)
 
     """ Merge multiple dividends or payments in lieu of dividends on the same day from the same company into a single entry """
     mergedDividends = []
@@ -873,10 +962,11 @@ def main():
             if \
                 dividend["date"].date() == mergedDividend["date"].date() \
                 and dividend["symbol"] == mergedDividend["symbol"] \
-                and mergedDividend["amount_eur"]>=0 \
-                and dividend["amount_eur"]>=0 \
+                and mergedDividend["net_amount_eur"]>=0 \
+                and dividend["net_amount_eur"]>=0 \
             :
-                mergedDividend["amount_eur"] = mergedDividend["amount_eur"] + dividend["amount_eur"]
+                mergedDividend["net_amount_eur"] = mergedDividend["net_amount_eur"] + dividend["net_amount_eur"]
+                mergedDividend["withholding_tax_amount"] = mergedDividend["withholding_tax_amount"] + dividend["withholding_tax_amount"]
                 if "positions" in mergedDividend:
                     mergedDividend["positions"].append(dividend["position_id"])
                 else:
@@ -887,21 +977,25 @@ def main():
             mergedDividends.append(dividend)
     dividends = mergedDividends
 
-    """ Load company info """
-    companyList = list(CompanyWorkbook(file="Naslovi_info.xlsx").info.read())
-
     """ Add missing data """
     missing_info = []
     for dividend in dividends:
         companyInfo = get_company_info(dividend["symbol"], companyList)
 
         if companyInfo is not None:
-            dividend["ISIN"] = companyInfo.ISIN
-            dividend["name"] = companyInfo.name
+            if dividend["ISIN"] != companyInfo.ISIN:
+                print("!!! POZOR / NAPAKA: ISIN {0} ({1}) se ne ujema z {2}".format(dividend["ISIN"], str(dividend), str(companyInfo)))
+                print("                    Preveri podatke v Company_info.xlsx.")
+                sys.exit(1)
+
             dividend["address"] = companyInfo.address
             dividend["country"] = companyInfo.country_code
-        else:
-            missing_info.append(dividend["symbol"])
+        elif not any(x["symbol"] == dividend["symbol"] for x in missing_info):
+            missing_info.append({
+                "symbol": dividend["symbol"],
+                "ISIN": dividend["ISIN"],
+                "name": dividend["name"]
+            })
 
 
     """ Generate Doh-Div.xml """
@@ -924,7 +1018,7 @@ def main():
     xml.etree.ElementTree.SubElement(Doh_Div, "Period").text = str(reportYear)
 
     for dividend in dividends:
-        if round(dividend["amount_eur"], 2) <= 0:
+        if round(dividend["net_amount_eur"], 2) <= 0:
             dividend["skipped"] = "YES"
             continue
 
@@ -942,10 +1036,11 @@ def main():
         if "country" in dividend:
             xml.etree.ElementTree.SubElement(Dividend, "PayerCountry").text = dividend["country"]
         xml.etree.ElementTree.SubElement(Dividend, "Type").text = "1"
-        xml.etree.ElementTree.SubElement(Dividend, "Value").text = "{0:.2f}".format(dividend["amount_eur"])
-        xml.etree.ElementTree.SubElement(Dividend, "ForeignTax").text = "{0:.2f}".format(0.0)
+        xml.etree.ElementTree.SubElement(Dividend, "Value").text = "{0:.2f}".format(dividend["net_amount_eur"])
+        xml.etree.ElementTree.SubElement(Dividend, "ForeignTax").text = "{0:.2f}".format(dividend["withholding_tax_amount"])
         if "country" in dividend:
             xml.etree.ElementTree.SubElement(Dividend, "SourceCountry").text = dividend["country"]
+		# TODO: sestavi seznam oprostitvenih besedil (MP, clen...) iz https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/
         #if "reliefStatement" in dividend:
         #    xml.etree.ElementTree.SubElement(Dividend, "ReliefStatement").text = dividend["reliefStatement"]
         #else:
@@ -973,7 +1068,7 @@ def main():
             (dividend["name"] if not dividend["name"] is None else ""),
             (dividend["address"] if "address" in dividend else ""),
             (dividend["country"] if "country" in dividend else ""),
-            "{0:.4f}".format(dividend["amount_eur"]),
+            "{0:.4f}".format(dividend["net_amount_eur"]),
             #dividend["currency"],
             dividend["position_id"] if not "positions" in dividend else ", ".join(map(str, dividend["positions"]))
         ]
@@ -981,7 +1076,7 @@ def main():
 
 
     """ Save dividend info to XLS """
-    wb = DividendsWorkbook(template_styles=DefaultStyleSet(
+    wb = DividendsOutputWorkbook(template_styles=DefaultStyleSet(
         NamedStyle(name="hyperlink")
     ))
     if len(rows) > 0:
@@ -994,20 +1089,22 @@ def main():
     print("{0} created ".format(filename))
 
     print("\n------------------------------------------------------------------------------------------------------------------------------------")
-    print("\neToro ne razkrije količino davka, ki je avtomatsko odveden v državi iz katere izhaja dividenda. Vse dividende\n"
-          "v eToro izpisu so neto. Za uveljavljanje olajšave pri eDavkih, je potrebno izračunat koliko davka je bilo odvedenega,\n"
+    print("\nZa uveljavljanje olajšave pri eDavkih, je potrebno izračunat koliko davka je bilo odvedenega,\n"
           "pripisat konvencijo (MP, št., člen, odstavek) o preprečevanju dvojnega obdavčevanja in priložiti dokazila o plačanem davku...\n"
           "Za davek po državah in konvencije glej:\n"
           "https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/.\n\n"
           "Dodatni info: https://www.etoro.com/customer-service/help/1484910272/how-much-tax-is-deducted-from-my-dividends/")
 
     if missing_info:
-        s = ", ".join(set(missing_info))
         print("\n\n")
         print("------------------------------------------------------------------------------------------------------------------------------------")
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print("Manjkajo podatki o podjetjih za sledeče delnice: {0}\n".format(s))
-        print("Dodaj podatke v Naslovi_info.xlsx in ponovno poženi konverzijo! (Lahko nadaljuješ z oddajo, vendar bo potrebno te podatke ročno vnesti na eDavki.)")
+        print("Manjkajo podatki o podjetjih za sledeče delnice:\n")
+        for mi in missing_info:
+            print("{0}\t{1}\t{2}".format(mi["symbol"], mi["ISIN"], mi["name"]))
+
+        print("Dodaj (in dopolni) zgornje podatke v Company_info.xlsx in ponovno poženi konverzijo! (Lahko nadaljuješ z oddajo, vendar bo potrebno te podatke ročno vnesti na eDavki.)")
+        print("Podatke o naslovu je običajno mogoče poiskati z ISIN kodo ali simbolom na https://www.marketscreener.com/ pod zavihkom \"Company\".")
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         print("------------------------------------------------------------------------------------------------------------------------------------")
 
