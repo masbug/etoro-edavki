@@ -27,6 +27,7 @@ ETORO_CURRENCY = "USD"
 bsRateXmlUrl = "https://www.bsi.si/_data/tecajnice/dtecbs-l.xml"
 ignoreAssets = []
 derivateAssets = ["CFD", "OPT", "FUT", "FOP"]
+normalAssets = ["Stocks", "Crypto", "ETF"]
 
 dividendMarker = "Payment caused by dividend"
 
@@ -349,13 +350,12 @@ def main():
             if name is not None and len(name) == 7 and name[:4] == symbol + "/":
                 symbol = name[0:3]+name[4:]
 
-            is_etf = name.find(" ETF") >= 0
             ifi_type = xlsTrade.type
 
             try:
                 leverage = int(xlsTrade.leverage) if xlsTrade.leverage is not None else 0
             except ValueError:
-                leverage = 0
+                leverage = 1
 
             if leverage is not None and leverage > 1:
                 amount = str2float(xlsTrade.amount) * leverage
@@ -388,10 +388,18 @@ def main():
                 print("ERROR: Could not determine position type! ")
                 sys.exit(-1)
 
-            if xlsTrade.type == "Real":
+            if ifi_type in derivateAssets:
+                asset_type = "derivate"
+            elif ifi_type in normalAssets:
+                if leverage > 1:
+                    print("ERROR: Leverage > 1 but asset type is not a derivate: {0}. Please report it on github.".format(ifi_type))
+                    sys.exit(-1)
                 asset_type = "normal"
             else:
-                asset_type = "derivate"
+                print("ERROR: Unknown asset type: {0}. Please report it on github.".format(ifi_type))
+                sys.exit(-1)
+
+            is_etf = ifi_type == "ETF"
 
             trade_open = {
                 "position_id": position_id,
@@ -440,7 +448,7 @@ def main():
                 allTradesBySymbol[symbol] = trade_open
 
 
-            if reportCryptos == False and ifi_type == "Real" and is_crypto(name, symbol, cryptoList):
+            if reportCryptos == False and ifi_type == "Crypto":
                 if name in skippedCryptoTrades.keys():
                     skippedCryptoTrades[name].extend([trade_open, trade_close])
                 else:
