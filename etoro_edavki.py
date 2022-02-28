@@ -876,9 +876,9 @@ def main():
             symbol = positionSymbols.get(position_id)
 
             rate = get_exchange_rate(rates, date, ETORO_CURRENCY)
-            net_amount_eur = str2float(xlsDividend.net_dividend) / rate
-            withholding_tax_rate = int("".join(filter(str.isdigit, xlsDividend.withholding_tax_rate))) / 100.0
             withholding_tax_amount = str2float(xlsDividend.withholding_tax_amount) / rate
+            withholding_tax_rate = int("".join(filter(str.isdigit, xlsDividend.withholding_tax_rate))) / 100.0
+            gross_amount_eur = str2float(xlsDividend.net_dividend) / rate / (1 - withholding_tax_rate)
 
             if symbol is None:
                 print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarju [positionSymbols]!".format(position_id))
@@ -887,7 +887,7 @@ def main():
 
             dividend = {
                 "position_id": position_id,
-                "net_amount_eur": net_amount_eur,
+                "gross_amount_eur": gross_amount_eur,
                 "withholding_tax_amount": withholding_tax_amount,
                 "withholding_tax_rate": withholding_tax_rate,
                 "date": date,
@@ -970,10 +970,10 @@ def main():
             if \
                 dividend["date"].date() == mergedDividend["date"].date() \
                 and dividend["symbol"] == mergedDividend["symbol"] \
-                and mergedDividend["net_amount_eur"]>=0 \
-                and dividend["net_amount_eur"]>=0 \
+                and mergedDividend["gross_amount_eur"]>=0 \
+                and dividend["gross_amount_eur"]>=0 \
             :
-                mergedDividend["net_amount_eur"] = mergedDividend["net_amount_eur"] + dividend["net_amount_eur"]
+                mergedDividend["gross_amount_eur"] = mergedDividend["gross_amount_eur"] + dividend["gross_amount_eur"]
                 mergedDividend["withholding_tax_amount"] = mergedDividend["withholding_tax_amount"] + dividend["withholding_tax_amount"]
                 if "positions" in mergedDividend:
                     mergedDividend["positions"].append(dividend["position_id"])
@@ -1026,7 +1026,7 @@ def main():
     xml.etree.ElementTree.SubElement(Doh_Div, "Period").text = str(reportYear)
 
     for dividend in dividends:
-        if round(dividend["net_amount_eur"], 2) <= 0:
+        if round(dividend["gross_amount_eur"], 2) <= 0:
             dividend["skipped"] = "YES"
             continue
 
@@ -1044,7 +1044,7 @@ def main():
         if "country" in dividend:
             xml.etree.ElementTree.SubElement(Dividend, "PayerCountry").text = dividend["country"]
         xml.etree.ElementTree.SubElement(Dividend, "Type").text = "1"
-        xml.etree.ElementTree.SubElement(Dividend, "Value").text = "{0:.2f}".format(dividend["net_amount_eur"])
+        xml.etree.ElementTree.SubElement(Dividend, "Value").text = "{0:.2f}".format(dividend["gross_amount_eur"])
         xml.etree.ElementTree.SubElement(Dividend, "ForeignTax").text = "{0:.2f}".format(dividend["withholding_tax_amount"])
         if "country" in dividend:
             xml.etree.ElementTree.SubElement(Dividend, "SourceCountry").text = dividend["country"]
@@ -1076,7 +1076,7 @@ def main():
             (dividend["name"] if not dividend["name"] is None else ""),
             (dividend["address"] if "address" in dividend else ""),
             (dividend["country"] if "country" in dividend else ""),
-            "{0:.4f}".format(dividend["net_amount_eur"]),
+            "{0:.4f}".format(dividend["gross_amount_eur"]),
             #dividend["currency"],
             dividend["position_id"] if not "positions" in dividend else ", ".join(map(str, dividend["positions"]))
         ]
