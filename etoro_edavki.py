@@ -56,14 +56,17 @@ class ClosedPositionsSheet(TableSheet):
 
 class TransactionsReportSheet(TableSheet):
     # 2022: Date	Type	Details	Amount	Realized Equity Change	Realized Equity	Balance	Position ID	NWA
+    # 2023: Date	Type	Details	Amount	Units	Realized Equity Change	Realized Equity	Balance	Position ID	Asset type	NWA
     date = CharColumn(header="Date")
     type = CharColumn(header="Type")
     details = CharColumn(header="Details")
     amount = CharColumn(header="Amount")
+    units = CharColumn(header="Units")
     realized_equity_change = CharColumn(header="Realized Equity Change")
     realized_equity = CharColumn(header="Realized Equity")
     account_balance = CharColumn(header="Balance")
     position_id = CharColumn(header="Position ID")
+    asset_type = CharColumn(header="Asset type")
     nwa = CharColumn(header="NWA")
 
 class DividendsSheet(TableSheet):
