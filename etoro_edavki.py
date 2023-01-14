@@ -84,13 +84,6 @@ class EToroWorkbook(TemplatedWorkbook):
     dividends = DividendsSheet(sheetname='Dividends')
     # summary = TemplatedWorksheet(sheetname='Financial Summary')
 
-class CryptoInfoSheet(TableSheet):
-    name = CharColumn(header='Crypto name')
-    symbol = CharColumn(header='Symbol')
-
-class CryptoWorkbook(TemplatedWorkbook):
-    info = CryptoInfoSheet(sheetname='Info')
-
 class CompanyInfoSheet(TableSheet):
     symbol = CharColumn(header='Symbol')
     ISIN = CharColumn(header='ISIN')
@@ -167,14 +160,6 @@ def update_position_symbols_from_dividends(dividendsList, companyList, syms):
             syms[position_id] = companyInfo.symbol
             # DEBUG print("!!! Found {0}: {1}, {2}".format(position_id, companyInfo.symbol, companyInfo.name))
     return syms
-
-def is_crypto(name, symbol, cryptoList):
-    name = name.lower()
-    symbol = symbol.upper()
-    for crypto in cryptoList:
-        if crypto.name.lower() == name or crypto.symbol == symbol:
-            return True
-    return False
 
 def get_company_info(symbol, companyList):
     symbol = symbol.upper()
@@ -275,13 +260,6 @@ def main():
         for r in d:
             currency = r.attrib["oznaka"]
             rates[date][currency] = r.text
-
-
-    """ Load crypto info """
-    if not reportCryptos:
-        cryptoList = list(CryptoWorkbook(file="Crypto_info.xlsx").info.read())
-    else:
-        cryptoList = []
 
     """ Load company info """
     companyList = list(CompanyWorkbook(file="Company_info.xlsx").info.read())
