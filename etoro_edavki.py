@@ -227,15 +227,18 @@ def main():
 
 
     if not os.path.isfile("taxpayer.xml"):
-        print("Modify taxpayer.xml and add your data first!")
+        print("Doh-Div.xml potrebuje tvojo davčno številko. Če se zmotiš, jo lahko spremeniš ročno (taxpayer.xml) ali pa kar pobrišeš taxpayer.xml in ponovno poženeš program.")
+        tax_number = input("Vnesi svojo davčno številko: ")
+        taxpayer_type = input("Tip davkoplačevalca (običajno FO, možnosti: FO - fizična oseba, PO - pravna oseba, SP - fizična oseba z dejavnostjo): ") or "FO"
+        taxpayer_type = taxpayer_type.upper()
         f = open("taxpayer.xml", "w+", encoding="utf-8")
         f.write(
             "<taxpayer>\n"
-            "   <taxNumber>12345678</taxNumber>\n"
-            "   <taxpayerType>FO</taxpayerType>\n"
+            "   <taxNumber>" + tax_number + "</taxNumber>\n"
+            "   <taxpayerType>" + taxpayer_type + "</taxpayerType>\n"
             "</taxpayer>"
         )
-        exit(0)
+        f.close()
 
     if not os.path.isdir("output"):
         os.mkdir("output")
