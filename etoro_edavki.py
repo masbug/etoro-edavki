@@ -81,11 +81,9 @@ class DividendsSheet(TableSheet):
     isin = CharColumn(header="ISIN")
 
 class EToroWorkbook(TemplatedWorkbook):
-    # account_details = TemplatedWorksheet(sheetname='Account Details')
     closed_positions = ClosedPositionsSheet(sheetname='Closed Positions')
     transactions = TransactionsReportSheet(sheetname='Account Activity')
     dividends = DividendsSheet(sheetname='Dividends')
-    # summary = TemplatedWorksheet(sheetname='Financial Summary')
 
 class CompanyInfoSheet(TableSheet):
     symbol = CharColumn(header='Symbol')
@@ -192,7 +190,7 @@ def main():
     parser.add_argument(
         "eToroXLSXFiles",
         metavar="eToro-xlsx-file",
-        help="eToro XLSX output file(s)",
+        help="eToro XLSX datoteka (\"XLSX Statement\")",
         nargs="+",
     )
     parser.add_argument(
@@ -200,7 +198,7 @@ def main():
         metavar="report-year",
         type=int,
         default=0,
-        help="Report will be generated for the provided calendar year (defaults to " + str(datetime.date.today().year - 1) + ")",
+        help="Datoteke bodo generirane za izbrano leto (privzeto za " + str(datetime.date.today().year - 1) + ")",
     )
     parser.add_argument(
         "-t",
@@ -209,7 +207,7 @@ def main():
     )
     parser.add_argument(
         "-c",
-        help="Include (real) crypto positions in the report (for s.p.; d.o.o.); crypto (real) positions are excluded otherwise; CFD cryptos are always included",
+        help="(Doh-KDVP) Vključi tudi kripto pozicije brez vzvoda v poročilu (običajno za s.p.; d.o.o.). Kripto pozicije z vzvodom (CFD) so vedno vključene.",
         action="store_true",
         default=False
     )
@@ -976,8 +974,8 @@ def main():
 
         if companyInfo is not None:
             if dividend["ISIN"] != companyInfo.ISIN:
-                print("!!! POZOR / NAPAKA: ISIN {0} ({1}) se ne ujema z {2}".format(dividend["ISIN"], str(dividend), str(companyInfo)))
-                print("                    Preveri podatke v Company_info.xlsx.")
+                print("!!! POZOR / NAPAKA:\n\tISIN {0}:\n\t\t{1}\n\tse ne ujema z:\n\t\t{2}".format(dividend["ISIN"], str(dividend), str(companyInfo)))
+                print("\tPreveri/popravi podatke v Company_info.xlsx in ponovno poženi program.")
                 sys.exit(1)
 
             dividend["address"] = companyInfo.address
@@ -1032,7 +1030,7 @@ def main():
         xml.etree.ElementTree.SubElement(Dividend, "ForeignTax").text = "{0:.2f}".format(dividend["withholding_tax_amount"])
         if "country" in dividend:
             xml.etree.ElementTree.SubElement(Dividend, "SourceCountry").text = dividend["country"]
-		# TODO: sestavi seznam oprostitvenih besedil (MP, clen...) iz https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/
+        # TODO: sestavi seznam oprostitvenih besedil (MP, clen...) iz https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/
         #if "reliefStatement" in dividend:
         #    xml.etree.ElementTree.SubElement(Dividend, "ReliefStatement").text = dividend["reliefStatement"]
         #else:
