@@ -19,6 +19,8 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
+APP_VER = "1.5.1"
+
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
 ETORO_DATETIME_FORMAT_EN2 = "%d/%m/%Y"
@@ -212,6 +214,10 @@ def str2float(num):
 # noinspection PyUnusedLocal
 def main():
     global float_with_comma
+
+    print("------------------------------------------------------------------------------")
+    print("| eToro->eDavki | verzija " + APP_VER)
+    print("------------------------------------------------------------------------------")
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
