@@ -20,8 +20,10 @@ from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
-ETORO_DATETIME_FORMAT_EN = "%d/%m/%Y %H:%M:%S"
-ETORO_DATETIME_FORMAT_SL = "%d.%m.%Y %H:%M:%S"
+ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
+ETORO_DATETIME_FORMAT_EN2 = "%d/%m/%Y"
+ETORO_DATETIME_FORMAT_SL1 = "%d.%m.%Y %H:%M:%S"
+ETORO_DATETIME_FORMAT_SL2 = "%d.%m.%Y"
 ETORO_CURRENCY = "USD"
 
 bsRateXmlUrl = "https://www.bsi.si/_data/tecajnice/dtecbs-l.xml"
@@ -110,6 +112,31 @@ class DividendsOutputSheet(TableSheet):
 
 class DividendsOutputWorkbook(TemplatedWorkbook):
     dividends = DividendsOutputSheet()
+
+# returns [date_format, float_with_comma]
+def determine_date_format_and_comma(date):
+    try:
+        datetime.datetime.strptime(date, ETORO_DATETIME_FORMAT_EN1)
+        return [ETORO_DATETIME_FORMAT_EN1, False]
+    except ValueError:
+        pass
+    try:
+        datetime.datetime.strptime(date, ETORO_DATETIME_FORMAT_SL1)
+        return [ETORO_DATETIME_FORMAT_SL1, True]
+    except ValueError:
+        pass
+    try:
+        datetime.datetime.strptime(date, ETORO_DATETIME_FORMAT_EN2)
+        return [ETORO_DATETIME_FORMAT_EN2, False]
+    except ValueError:
+        pass
+    try:
+        datetime.datetime.strptime(date, ETORO_DATETIME_FORMAT_SL2)
+        return [ETORO_DATETIME_FORMAT_SL2, True]
+    except ValueError:
+        print("ERROR: Could not determine eToro DATETIME format!")
+        sys.exit(-1)
+
 
 def get_exchange_rate(rates, trade_date, currency):
     date = trade_date.strftime("%Y%m%d")
@@ -302,17 +329,7 @@ def main():
         for xlsTrade in tradeSheet:
             # determine etoro datetime format
             if ETORO_DATETIME_FORMAT is None:
-                try:
-                    datetime.datetime.strptime(xlsTrade.close_date, ETORO_DATETIME_FORMAT_EN)
-                    ETORO_DATETIME_FORMAT = ETORO_DATETIME_FORMAT_EN
-                except ValueError:
-                    try:
-                        datetime.datetime.strptime(xlsTrade.close_date, ETORO_DATETIME_FORMAT_SL)
-                        ETORO_DATETIME_FORMAT = ETORO_DATETIME_FORMAT_SL
-                        float_with_comma = True
-                    except ValueError:
-                        print("ERROR: Could not determine eToro DATETIME format!")
-                        sys.exit(-1)
+                ETORO_DATETIME_FORMAT, float_with_comma = determine_date_format_and_comma(xlsTrade.close_date)
 
             close_date = datetime.datetime.strptime(xlsTrade.close_date, ETORO_DATETIME_FORMAT)
             if close_date.year != reportYear:
@@ -842,12 +859,16 @@ def main():
 
     """ Get dividends from XLSX """
     dividends = []
+    ETORO_DATETIME_FORMAT = None
 
     for diviSheet in dividendsList:
         if diviSheet is None:
             continue
 
         for xlsDividend in diviSheet:
+            if ETORO_DATETIME_FORMAT is None:
+                ETORO_DATETIME_FORMAT, float_with_comma = determine_date_format_and_comma(xlsDividend.date)
+
             # Date of Payment	Instrument Name	Net Dividend Received (USD)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)	Position ID	Type	ISIN
             date = datetime.datetime.strptime(xlsDividend.date, ETORO_DATETIME_FORMAT)
             if date.year != reportYear:
