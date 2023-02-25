@@ -68,6 +68,7 @@ Pri uveljavljanju olajšave za že odvedeni davek v tujini, je potrebno na eDavk
 
 ### Uvoz v eDavke
 1. V meniju **Dokument** klikni **Uvoz**. Izberi eno izmed generiranih datotek (Doh-KDVP.xml, D-IFI, Doh-Div) in jo **Prenesi**.
+![image](https://user-images.githubusercontent.com/11191264/221360416-bce47565-7f11-4d5e-a3e2-4466785c1bc7.png)
 2. Preveri izpolnjene podatke in dodaj manjkajoče.
 3. Pri obrazcih Doh-KDVP in D-IFI je na seznamu popisnih listov po en popisni list za vsak vrednostni papir (ticker).
 4. Klikni na ime vrednostnega papirja in odpri popisni list.
