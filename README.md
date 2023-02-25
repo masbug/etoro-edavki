@@ -61,10 +61,10 @@ Skripta najprej avtomatsko prenese tabelo za konverzijo valut, nato v mapi outpu
 
 #### Obrazec Doh-Div
 Obrazec Doh-Div zahteva dodatne podatke o podjetju, ki je izplačalo dividende (identifikacijska številka, naslov, ISIN), ki jih v izvirnih podatkih eTora ni. Te podatke je potrebno ročno poiskati in dopisati v Naslovi_info.xlsx.
-Prav tako eToro v poročilu ne zapiše odvedenega davka od dividend (_witholding tax_), za katerega lahko uveljavljamo olajšavo. Izpisek plačanega davka od dividend lahko zahtevate od eToro preko supporta. Pri uveljavljanju olajšave za že odvedeni davek v tujini, je potrebno na eDavkih specificirati mednarodno pogodbo od preprečevanju dvojnega obdavčevanja in člen. Za pomoč pri pogodbah je tabela:
+Pri uveljavljanju olajšave za že odvedeni davek v tujini, je potrebno na eDavkih specificirati mednarodno pogodbo od preprečevanju dvojnega obdavčevanja in člen. Za pomoč pri pogodbah je tabela:
 - https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/
 
-...člene pa je potrebno ročno poiskat.
+...člene pa je potrebno ročno poiskat. Je pa za vprašati na FURSu ali je to resnično potrebno.
 
 ### Uvoz v eDavke
 1. V meniju **Dokument** klikni **Uvoz**. Izberi eno izmed generiranih datotek (Doh-KDVP.xml, D-IFI, Doh-Div) in jo **Prenesi**.
