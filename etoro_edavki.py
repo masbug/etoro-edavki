@@ -19,7 +19,7 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
-APP_VER = "1.5.1"
+APP_VER = "1.6.0"
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
@@ -38,7 +38,8 @@ dividendMarker = "Payment caused by dividend"
 float_with_comma = False
 
 class ClosedPositionsSheet(TableSheet):
-    # 2022: Position ID	Action	Amount	Units	Open Date	Close Date	Leverage	Spread	Profit	Open Rate	Close Rate	Take profit rate	Stop lose rate	Rollover Fees and Dividends	Copied From	Type	ISIN	Notes
+    # 2024: Position ID	Action	Amount	Units	Open Date	Close Date	Leverage	Spread Fees (USD)	Profit(USD)	Profit(EUR)	Open Rate
+    #       Close Rate	Take profit rate	Stop lose rate	Rollover Fees and Dividends	Copied From	Type	ISIN	Notes
     position_id = CharColumn(header="Position ID")
     action = CharColumn(header="Action")
     amount = CharColumn(header="Amount")
@@ -46,8 +47,9 @@ class ClosedPositionsSheet(TableSheet):
     open_date = CharColumn(header="Open Date")
     close_date = CharColumn(header="Close Date")
     leverage = CharColumn(header="Leverage")
-    spread = CharColumn(header="Spread")
-    profit = CharColumn(header="Profit")
+    spread = CharColumn(header="Spread Fees (USD)")
+    profit = CharColumn(header="Profit(USD)")
+    profit_eur = CharColumn(header="Profit(EUR)")
     open_rate = CharColumn(header="Open Rate")
     close_rate = CharColumn(header="Close Rate")
     take_profit_rate = CharColumn(header="Take profit rate")
@@ -58,7 +60,7 @@ class ClosedPositionsSheet(TableSheet):
     isin = CharColumn(header="ISIN")
     notes = CharColumn(header="Notes")
 
-class TransactionsReportSheet(TableSheet):
+class AccountActivityReportSheet(TableSheet):
     # 2022: Date	Type	Details	Amount	Realized Equity Change	Realized Equity	Balance	Position ID	NWA
     # 2023: Date	Type	Details	Amount	Units	Realized Equity Change	Realized Equity	Balance	Position ID	Asset type	NWA
     date = CharColumn(header="Date")
@@ -74,19 +76,22 @@ class TransactionsReportSheet(TableSheet):
     nwa = CharColumn(header="NWA")
 
 class DividendsSheet(TableSheet):
-    # Date of Payment	Instrument Name	Net Dividend Received (USD)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)	Position ID	Type	ISIN
+    # 2024: Date of Payment	Instrument Name	Net Dividend Received (USD)	Net Dividend Received (EUR)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)
+    #       Withholding Tax Amount (EUR)	Position ID	Type	ISIN
     date = CharColumn(header="Date of Payment")
     name = CharColumn(header="Instrument Name")
     net_dividend = CharColumn(header="Net Dividend Received (USD)")
+    net_dividend_eur = CharColumn(header="Net Dividend Received (EUR)")
     withholding_tax_rate = CharColumn(header="Withholding Tax Rate (%)")
     withholding_tax_amount = CharColumn(header="Withholding Tax Amount (USD)")
+    withholding_tax_amount_eur = CharColumn(header="Withholding Tax Amount (EUR)")
     position_id = CharColumn(header="Position ID")
     type = CharColumn(header="Type")
     isin = CharColumn(header="ISIN")
 
 class EToroWorkbook(TemplatedWorkbook):
     closed_positions = ClosedPositionsSheet(sheetname='Closed Positions')
-    transactions = TransactionsReportSheet(sheetname='Account Activity')
+    transactions = AccountActivityReportSheet(sheetname='Account Activity')
     dividends = DividendsSheet(sheetname='Dividends')
 
 class CompanyInfoSheet(TableSheet):
@@ -995,15 +1000,14 @@ def main():
     dividends = mergedDividends
 
     """ Add missing data """
+    errors = []
     missing_info = []
     for dividend in dividends:
         companyInfo = get_company_info(dividend["symbol"], companyList)
 
         if companyInfo is not None:
             if dividend["ISIN"] != companyInfo.ISIN:
-                print("!!! POZOR / NAPAKA:\n\tISIN {0}:\n\t\t{1}\n\tse ne ujema z:\n\t\t{2}".format(dividend["ISIN"], str(dividend), str(companyInfo)))
-                print("\tPreveri/popravi podatke v Company_info.xlsx in ponovno poženi program.")
-                sys.exit(1)
+                errors.append([dividend["ISIN"], str(dividend), str(companyInfo)])
 
             dividend["address"] = companyInfo.address
             dividend["country"] = companyInfo.country_code
@@ -1014,6 +1018,12 @@ def main():
                 "name": dividend["name"]
             })
 
+    if errors:
+        print("!!! POZOR / NAPAKA:\n")
+        for e in errors:
+            print("\tISIN {0}:\n\t\t{1}\n\tse ne ujema z:\n\t\t{2}".format(e[0], e[1], e[2]))
+        print("\tPreveri/popravi podatke v Company_info.xlsx in ponovno poženi program.")
+        sys.exit(1)
 
     """ Generate Doh-Div.xml """
     envelope = xml.etree.ElementTree.Element("Envelope", xmlns="http://edavki.durs.si/Documents/Schemas/Doh_Div_3.xsd")
