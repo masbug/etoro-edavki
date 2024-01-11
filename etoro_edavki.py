@@ -19,7 +19,7 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
-APP_VER = "1.6.0"
+APP_VER = "1.6.1"
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
@@ -104,7 +104,6 @@ class CompanyInfoSheet(TableSheet):
 class CompanyWorkbook(TemplatedWorkbook):
     info = CompanyInfoSheet(sheetname='Info')
 
-
 class DividendsOutputSheet(TableSheet):
     skipped = CharColumn(header="Skipped", width=7)
     date = CharColumn(header="Date", width=12)
@@ -113,7 +112,9 @@ class DividendsOutputSheet(TableSheet):
     name = CharColumn(header="Company/Name", width=50)
     address = CharColumn(header="Address", width=65)
     country = CharColumn(header="CountryCode", width=7)
-    dividend_eur = CharColumn(header="Dividend [EUR]")
+    netto_dividend_eur = CharColumn(header="Netto dividend [EUR]")
+    dividend_tax_eur = CharColumn(header="Withholding Tax Amount [EUR]")
+    dividend_eur = CharColumn(header="Gross dividend [EUR]")
     #currency = CharColumn(header="Orig. currency")
     position_ids = CharColumn(header="Position ID(s)", width=100)
 
@@ -214,7 +215,6 @@ def str2float(num):
     if float_with_comma:
         return float(num.replace(",", "."))
     return float(num)
-
 
 # noinspection PyUnusedLocal
 def main():
@@ -890,9 +890,14 @@ def main():
             symbol = positionSymbols.get(position_id)
 
             rate = get_exchange_rate(rates, date, ETORO_CURRENCY)
-            withholding_tax_amount = str2float(xlsDividend.withholding_tax_amount) / rate
-            withholding_tax_rate = int("".join(filter(str.isdigit, xlsDividend.withholding_tax_rate))) / 100.0
-            gross_amount_eur = str2float(xlsDividend.net_dividend) / rate / (1 - withholding_tax_rate)
+            withholding_tax_rate = float(xlsDividend.withholding_tax_rate.rstrip('%')) / 100.0
+            # old way
+            # withholding_tax_amount = str2float(xlsDividend.withholding_tax_amount) / rate
+            # gross_amount_eur = str2float(xlsDividend.net_dividend) / rate / (1 - withholding_tax_rate)
+            # new (but doesn't use BSRATE)
+            netto_amount_eur = str2float(xlsDividend.net_dividend_eur)
+            withholding_tax_amount = str2float(xlsDividend.withholding_tax_amount_eur)
+            gross_amount_eur = netto_amount_eur + withholding_tax_amount
 
             if symbol is None:
                 print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarju [positionSymbols]!".format(position_id))
@@ -902,6 +907,7 @@ def main():
             dividend = {
                 "position_id": position_id,
                 "gross_amount_eur": gross_amount_eur,
+                "netto_amount_eur": netto_amount_eur,
                 "withholding_tax_amount": withholding_tax_amount,
                 "withholding_tax_rate": withholding_tax_rate,
                 "date": date,
@@ -987,6 +993,7 @@ def main():
                 and mergedDividend["gross_amount_eur"]>=0 \
                 and dividend["gross_amount_eur"]>=0 \
             :
+                mergedDividend["netto_amount_eur"] = mergedDividend["netto_amount_eur"] + dividend["netto_amount_eur"]
                 mergedDividend["gross_amount_eur"] = mergedDividend["gross_amount_eur"] + dividend["gross_amount_eur"]
                 mergedDividend["withholding_tax_amount"] = mergedDividend["withholding_tax_amount"] + dividend["withholding_tax_amount"]
                 if "positions" in mergedDividend:
@@ -1095,6 +1102,8 @@ def main():
             (dividend["name"] if not dividend["name"] is None else ""),
             (dividend["address"] if "address" in dividend else ""),
             (dividend["country"] if "country" in dividend else ""),
+            "{0:.4f}".format(dividend["netto_amount_eur"]),
+            "{0:.4f}".format(dividend["withholding_tax_amount"]),
             "{0:.4f}".format(dividend["gross_amount_eur"]),
             #dividend["currency"],
             dividend["position_id"] if not "positions" in dividend else ", ".join(map(str, dividend["positions"]))
