@@ -20,7 +20,6 @@ Pisanje skripte mi je vzelo precej časa. Sam donacij ne sprejemam, bom pa vesel
 
 ### Namestitev skripte
 
-Potreben je python3.9.
 ```
 pip3 install --upgrade git+https://github.com/masbug/etoro-edavki.git
 ```

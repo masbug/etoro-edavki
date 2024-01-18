@@ -1,4 +1,4 @@
-openpyxl==3.0.9
+openpyxl==3.0.9; python_version <= '3.9'
+openpyxl==3.2.0b1; python_version >= '3.10'
 openpyxl-templates==0.2.5
-prettytable==2.5.0
-future==0.18.2
+future==0.18.3

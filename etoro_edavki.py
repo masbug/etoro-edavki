@@ -1,5 +1,11 @@
 #!/usr/bin/python
 
+# python 3.10+ fix
+import sys
+if sys.version_info.major == 3 and sys.version_info.minor >= 10:
+    import collections.abc
+    collections.Iterable = collections.abc.Iterable
+
 import urllib.request
 import sys
 import xml.etree.ElementTree
