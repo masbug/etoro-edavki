@@ -170,7 +170,7 @@ def get_position_symbols(transactionList):
         for xlsTransaction in transactionSheet:
             # Date	Account Balance	Type	Details	Position ID	Amount	Realized Equity Change	Realized Equity	NWA
             #if xlsTransaction.type == "Open Position":
-            if xlsTransaction.position_id is None or xlsTransaction.details.find("/") < 0:
+            if xlsTransaction.position_id is None or xlsTransaction.details is None or xlsTransaction.details.find("/") < 0:
                 continue
             details_split = xlsTransaction.details.split("/", 1)
             position_id = int(xlsTransaction.position_id)
