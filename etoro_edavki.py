@@ -644,7 +644,7 @@ def main():
         # We need to enter either ISIN, Code or Name
         # ISIN = xml.etree.ElementTree.SubElement(Securities, "ISIN").text = trades[0]["isin"]
         if len(trades) > 0 and "symbol" in trades[0] and trades[0]["symbol"] is not None:
-            Code = xml.etree.ElementTree.SubElement(Securities, "Code").text = trades[0]["symbol"]
+            Code = xml.etree.ElementTree.SubElement(Securities, "Code").text = trades[0]["symbol"][:10]
         Name = xml.etree.ElementTree.SubElement(Securities, "Name").text = trades[0]["name"]
         IsFond = xml.etree.ElementTree.SubElement(Securities, "IsFond").text = "true" if trades[0]["is_etf"] else "false"
 
@@ -700,7 +700,7 @@ def main():
         # We need to enter either ISIN, Code or Name
         #ISIN = xml.etree.ElementTree.SubElement(SecuritiesShort, "ISIN").text = trades[0]["isin"]
         if len(trades) > 0 and "symbol" in trades[0] and trades[0]["symbol"] is not None:
-            Code = xml.etree.ElementTree.SubElement(SecuritiesShort, "Code").text = trades[0]["symbol"]
+            Code = xml.etree.ElementTree.SubElement(SecuritiesShort, "Code").text = trades[0]["symbol"][:10]
         Name = xml.etree.ElementTree.SubElement(SecuritiesShort, "Name").text = trades[0]["name"]
         IsFond = xml.etree.ElementTree.SubElement(SecuritiesShort, "IsFond").text = "true" if trades[0]["is_etf"] else "false"
 
