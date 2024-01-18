@@ -602,7 +602,14 @@ def main():
     envelope = xml.etree.ElementTree.Element("Envelope", xmlns="http://edavki.durs.si/Documents/Schemas/Doh_KDVP_9.xsd")
     envelope.set("xmlns:edp", "http://edavki.durs.si/Documents/Schemas/EDP-Common-1.xsd")
     header = xml.etree.ElementTree.SubElement(envelope, "edp:Header")
-    xml.etree.ElementTree.SubElement(header, "edp:taxpayer")
+    taxpayer = xml.etree.ElementTree.SubElement(header, "edp:taxpayer")
+    xml.etree.ElementTree.SubElement(taxpayer, "edp:taxNumber").text = taxpayerConfig["taxNumber"]
+    xml.etree.ElementTree.SubElement(taxpayer, "edp:taxpayerType").text = taxpayerConfig["taxpayerType"]
+    Workflow = xml.etree.ElementTree.SubElement(header, "edp:Workflow")
+    if test:
+        xml.etree.ElementTree.SubElement(Workflow, "edp:DocumentWorkflowID").text = "I"
+    else:
+        xml.etree.ElementTree.SubElement(Workflow, "edp:DocumentWorkflowID").text = "O"
     xml.etree.ElementTree.SubElement(envelope, "edp:AttachmentList")
     xml.etree.ElementTree.SubElement(envelope, "edp:Signatures")
 
@@ -756,8 +763,17 @@ def main():
     envelope.set("xmlns:edp", "http://edavki.durs.si/Documents/Schemas/EDP-Common-1.xsd")
     header = xml.etree.ElementTree.SubElement(envelope, "edp:Header")
     taxpayer = xml.etree.ElementTree.SubElement(header, "edp:taxpayer")
+    xml.etree.ElementTree.SubElement(taxpayer, "edp:taxNumber").text = taxpayerConfig["taxNumber"]
+    xml.etree.ElementTree.SubElement(taxpayer, "edp:taxpayerType").text = taxpayerConfig["taxpayerType"]
+    Workflow = xml.etree.ElementTree.SubElement(header, "edp:Workflow")
+    if test:
+        xml.etree.ElementTree.SubElement(Workflow, "edp:DocumentWorkflowID").text = "I"
+    else:
+        xml.etree.ElementTree.SubElement(Workflow, "edp:DocumentWorkflowID").text = "O"
     xml.etree.ElementTree.SubElement(envelope, "edp:AttachmentList")
     xml.etree.ElementTree.SubElement(envelope, "edp:Signatures")
+
+
     body = xml.etree.ElementTree.SubElement(envelope, "body")
     xml.etree.ElementTree.SubElement(body, "edp:bodyContent")
     difi = xml.etree.ElementTree.SubElement(body, "D_IFI")
