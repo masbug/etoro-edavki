@@ -663,9 +663,9 @@ def main():
                 # G - darilo, H - drugo, I - povečanje kapitalskega deleža v osebni družbi zaradi pripisa dobička kapitalskemu deležu
                 F2 = xml.etree.ElementTree.SubElement(PurchaseSale, "F2").text = "B"
                 # Količina
-                F3 = xml.etree.ElementTree.SubElement(PurchaseSale, "F3").text = "{0:.4f}".format(trade["quantity"])
+                F3 = xml.etree.ElementTree.SubElement(PurchaseSale, "F3").text = "{0:.8f}".format(trade["quantity"])
                 # Nabavna vrednost ob pridobitvi (na enoto)
-                F4 = xml.etree.ElementTree.SubElement(PurchaseSale, "F4").text = "{0:.4f}".format(trade["trade_price_eur"])
+                F4 = xml.etree.ElementTree.SubElement(PurchaseSale, "F4").text = "{0:.8f}".format(trade["trade_price_eur"])
                 # Plačan davek na dediščine in darila (F2 == F | G)
                 F5 = xml.etree.ElementTree.SubElement(PurchaseSale, "F5").text = "0.0000"
             elif trade["quantity"] == 0:
@@ -675,15 +675,15 @@ def main():
                 # Datum odsvojitve
                 F6 = xml.etree.ElementTree.SubElement(PurchaseSale, "F6").text = trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT)
                 # Količina odsvojenega v.p.
-                F7 = xml.etree.ElementTree.SubElement(PurchaseSale, "F7").text = "{0:.4f}".format(-trade["quantity"])
+                F7 = xml.etree.ElementTree.SubElement(PurchaseSale, "F7").text = "{0:.8f}".format(-trade["quantity"])
                 # Vrednost ob osvojitvi (na enoto)
-                F9 = xml.etree.ElementTree.SubElement(PurchaseSale, "F9").text = "{0:.4f}".format(trade["trade_price_eur"])
+                F9 = xml.etree.ElementTree.SubElement(PurchaseSale, "F9").text = "{0:.8f}".format(trade["trade_price_eur"])
                 # Pravilo iz drugega odstavka v povezavi s petim odstavkom 97.člena ZDoh-2
                 # TODO:
                 #F10 = xml.etree.ElementTree.SubElement(PurchaseSale, "F10").text = "NE"
             # Trenutna zaloga
             F8Value += trade["quantity"]
-            F8 = xml.etree.ElementTree.SubElement(Row, "F8").text = "{0:.4f}".format(F8Value)
+            F8 = xml.etree.ElementTree.SubElement(Row, "F8").text = "{0:.8f}".format(F8Value)
         # trades
     # longNormalTrades
 
@@ -714,20 +714,20 @@ def main():
                 PurchaseSale = xml.etree.ElementTree.SubElement(Row, "Purchase")
                 F1 = xml.etree.ElementTree.SubElement(PurchaseSale, "F1").text = trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT)
                 F2 = xml.etree.ElementTree.SubElement(PurchaseSale, "F2").text = "A"
-                F3 = xml.etree.ElementTree.SubElement(PurchaseSale, "F3").text = "{0:.4f}".format(trade["quantity"])
-                F4 = xml.etree.ElementTree.SubElement(PurchaseSale, "F4").text = "{0:.4f}".format(trade["trade_price_eur"])
+                F3 = xml.etree.ElementTree.SubElement(PurchaseSale, "F3").text = "{0:.8f}".format(trade["quantity"])
+                F4 = xml.etree.ElementTree.SubElement(PurchaseSale, "F4").text = "{0:.8f}".format(trade["trade_price_eur"])
                 F5 = xml.etree.ElementTree.SubElement(PurchaseSale, "F5").text = "0.0000"
             else:
                 PurchaseSale = xml.etree.ElementTree.SubElement(Row, "Sale")
                 F6 = xml.etree.ElementTree.SubElement(PurchaseSale, "F6").text = trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT)
-                F7 = xml.etree.ElementTree.SubElement(PurchaseSale, "F7").text = "{0:.4f}".format(-trade["quantity"])
-                F9 = xml.etree.ElementTree.SubElement(PurchaseSale, "F9").text = "{0:.4f}".format(trade["trade_price_eur"])
+                F7 = xml.etree.ElementTree.SubElement(PurchaseSale, "F7").text = "{0:.8f}".format(-trade["quantity"])
+                F9 = xml.etree.ElementTree.SubElement(PurchaseSale, "F9").text = "{0:.8f}".format(trade["trade_price_eur"])
                 # Pravilo iz drugega odstavka v povezavi s petim odstavkom 97.člena ZDoh-2
                 # TODO:
                 # F10 = xml.etree.ElementTree.SubElement(PurchaseSale, "F10").text = "NE"
             # Trenutna zaloga
             F8Value += trade["quantity"]
-            F8 = xml.etree.ElementTree.SubElement(Row, "F8").text = "{0:.4f}".format(F8Value)
+            F8 = xml.etree.ElementTree.SubElement(Row, "F8").text = "{0:.8f}".format(F8Value)
         # trades
     # shortNormalTrades
 
@@ -818,9 +818,9 @@ def main():
                 # Način pridobitve: A - nakup, B - dedovanje, C - darila, D - drugo
                 F2 = xml.etree.ElementTree.SubElement(PurchaseSale, "F2").text = "A"
                 # Količina
-                F3 = xml.etree.ElementTree.SubElement(PurchaseSale, "F3").text = "{0:.4f}".format(trade["quantity"])
+                F3 = xml.etree.ElementTree.SubElement(PurchaseSale, "F3").text = "{0:.8f}".format(trade["quantity"])
                 # Nabavna vrednost ob pridobitvi (na enoto)
-                F4 = xml.etree.ElementTree.SubElement(PurchaseSale, "F4").text = "{0:.4f}".format(trade["trade_price_eur"])
+                F4 = xml.etree.ElementTree.SubElement(PurchaseSale, "F4").text = "{0:.8f}".format(trade["trade_price_eur"])
                 # Trgovanje z vzvodom
                 F9 = xml.etree.ElementTree.SubElement(PurchaseSale, "F9").text = "true" if trade["leverage"] > 1 else "false"
             else:
@@ -828,11 +828,11 @@ def main():
                 # Datum odsvojitve
                 F5 = xml.etree.ElementTree.SubElement(PurchaseSale, "F5").text = trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT)
                 # Količina odsvojenega v.p.
-                F6 = xml.etree.ElementTree.SubElement(PurchaseSale, "F6").text = "{0:.4f}".format(-trade["quantity"])
+                F6 = xml.etree.ElementTree.SubElement(PurchaseSale, "F6").text = "{0:.8f}".format(-trade["quantity"])
                 # Vrednost ob odsvojitvi
-                F7 = xml.etree.ElementTree.SubElement(PurchaseSale, "F7").text = "{0:.4f}".format(trade["trade_price_eur"])
+                F7 = xml.etree.ElementTree.SubElement(PurchaseSale, "F7").text = "{0:.8f}".format(trade["trade_price_eur"])
             F8Value += trade["quantity"]
-            F8 = xml.etree.ElementTree.SubElement(TSubItem, "F8").text = "{0:.4f}".format(F8Value)
+            F8 = xml.etree.ElementTree.SubElement(TSubItem, "F8").text = "{0:.8f}".format(F8Value)
         # trades
     # longDerivateTrades
 
@@ -866,17 +866,17 @@ def main():
             if trade["quantity"] > 0:
                 PurchaseSale = xml.etree.ElementTree.SubElement(TShortSubItem, "Sale")
                 F1 = xml.etree.ElementTree.SubElement(PurchaseSale, "F1").text = trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT)
-                F2 = xml.etree.ElementTree.SubElement(PurchaseSale, "F2").text = "{0:.4f}".format(trade["quantity"])
-                F3 = xml.etree.ElementTree.SubElement(PurchaseSale, "F3").text = "{0:.4f}".format(trade["trade_price_eur"])
+                F2 = xml.etree.ElementTree.SubElement(PurchaseSale, "F2").text = "{0:.8f}".format(trade["quantity"])
+                F3 = xml.etree.ElementTree.SubElement(PurchaseSale, "F3").text = "{0:.8f}".format(trade["trade_price_eur"])
                 F9 = xml.etree.ElementTree.SubElement(PurchaseSale, "F9").text = "true" if trade["leverage"] > 1 else "false"
             else:
                 PurchaseSale = xml.etree.ElementTree.SubElement(TShortSubItem, "Purchase")
                 F4 = xml.etree.ElementTree.SubElement(PurchaseSale, "F4").text = trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT)
                 F5 = xml.etree.ElementTree.SubElement(PurchaseSale, "F5").text = "A"
-                F6 = xml.etree.ElementTree.SubElement(PurchaseSale, "F6").text = "{0:.4f}".format(-trade["quantity"])
-                F7 = xml.etree.ElementTree.SubElement(PurchaseSale, "F7").text = "{0:.4f}".format(trade["trade_price_eur"])
+                F6 = xml.etree.ElementTree.SubElement(PurchaseSale, "F6").text = "{0:.8f}".format(-trade["quantity"])
+                F7 = xml.etree.ElementTree.SubElement(PurchaseSale, "F7").text = "{0:.8f}".format(trade["trade_price_eur"])
             F8Value += trade["quantity"]
-            F8 = xml.etree.ElementTree.SubElement(TShortSubItem, "F8").text = "{0:.4f}".format(F8Value)
+            F8 = xml.etree.ElementTree.SubElement(TShortSubItem, "F8").text = "{0:.8f}".format(F8Value)
         # trades
     # shortDerivateTrades
 
@@ -1124,9 +1124,9 @@ def main():
             (dividend["name"] if not dividend["name"] is None else ""),
             (dividend["address"] if "address" in dividend else ""),
             (dividend["country"] if "country" in dividend else ""),
-            "{0:.4f}".format(dividend["netto_amount_eur"]),
-            "{0:.4f}".format(dividend["withholding_tax_amount"]),
-            "{0:.4f}".format(dividend["gross_amount_eur"]),
+            "{0:.8f}".format(dividend["netto_amount_eur"]),
+            "{0:.8f}".format(dividend["withholding_tax_amount"]),
+            "{0:.8f}".format(dividend["gross_amount_eur"]),
             #dividend["currency"],
             dividend["position_id"] if not "positions" in dividend else ", ".join(map(str, dividend["positions"]))
         ]
