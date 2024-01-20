@@ -36,19 +36,19 @@ https://github.com/masbug/etoro-edavki/releases
 1. V meniju odpri **Portfolio**
 2. Desno od menija poleg besede **Portfolio** klikni na "urico" (_history_).
 3. V history pogledu klikni na zobnik skrajno desno in izberi "Account statement".
-4. Vpiši začetni datum (01/01/_prejšnje leto_) in končni datum (01/01/_to leto_).
+4. Vpiši začetni datum (01/01/_prejšnje leto, bolje še kakšno prej_) in končni datum (01/01/_to leto_).
 5. Klikni na kljukico za potrditev.
 6. Klikni na XLS ikono za izvoz v Excel obliki.
 
 ### Konverzija poročila v popisne liste primerne za uvoz v eDavke
 
 ```
-etoro-edavki [-h] [-c] [-y report-year] eToroAccountStatement-2021.xlsx
+etoro-edavki [-h] [-c] [-y report-year] eToroAccountStatement-2024.xlsx
 ```
 Argumenti:
 *    -y: ročno izbere leto za katero se naj XMLji izvozijo (debugging)
 *    -c: vključi tudi "real" kripto pozicije v napovedi (CFD so vedno vključene)
-*    eToroAccountStatement-2021.xlsx: datoteka, ki jo prenesemo iz eToro
+*    eToroAccountStatement-2024.xlsx: datoteka, ki jo prenesemo iz eToro
 
 #### Postopek
 Skripta najprej avtomatsko prenese tabelo za konverzijo valut, nato v mapi output ustvari 4 datoteke:
@@ -61,10 +61,12 @@ Skripta najprej avtomatsko prenese tabelo za konverzijo valut, nato v mapi outpu
 
 #### Obrazec Doh-Div
 Obrazec Doh-Div zahteva dodatne podatke o podjetju, ki je izplačalo dividende (identifikacijska številka, naslov, ISIN), ki jih v izvirnih podatkih eTora ni. Te podatke je potrebno ročno poiskati in dopisati v Naslovi_info.xlsx.
-Pri uveljavljanju olajšave za že odvedeni davek v tujini, je potrebno na eDavkih specificirati mednarodno pogodbo od preprečevanju dvojnega obdavčevanja in člen. Za pomoč pri pogodbah je tabela:
-- https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/
 
-...člene pa je potrebno ročno poiskat. Je pa za vprašati na FURSu ali je to resnično potrebno.
+~~Pri uveljavljanju olajšave za že odvedeni davek v tujini, je potrebno na eDavkih specificirati mednarodno pogodbo od preprečevanju dvojnega obdavčevanja in člen. Za pomoč pri pogodbah je tabela:~~
+~~- https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/~~
+~~...člene pa je potrebno ročno poiskat.~~
+
+[Po zadnjih informacijah ni potrebno izpolniti polja za mednarodno pogodbo.](https://github.com/masbug/etoro-edavki/issues/28#issuecomment-1899933818)
 
 ### Uvoz v eDavke
 1. V meniju **Dokument** klikni **Uvoz**. Izberi eno izmed generiranih datotek (Doh-KDVP.xml, D-IFI, Doh-Div) in jo **Prenesi**.
