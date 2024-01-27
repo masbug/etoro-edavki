@@ -25,7 +25,7 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
-APP_VER = "1.6.3"
+APP_VER = "1.6.4"
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
@@ -54,6 +54,7 @@ class ClosedPositionsSheet(TableSheet):
     close_date = CharColumn(header="Close Date")
     leverage = CharColumn(header="Leverage")
     spread = CharColumn(header="Spread Fees (USD)")
+    market_spread = CharColumn(header="Market Spread (USD)")
     profit = CharColumn(header="Profit(USD)")
     profit_eur = CharColumn(header="Profit(EUR)")
     open_rate = CharColumn(header="Open Rate")
@@ -1147,11 +1148,6 @@ def main():
     print("{0} created ".format(filename))
 
     print("\n------------------------------------------------------------------------------------------------------------------------------------")
-    print("\nZa uveljavljanje olajšave pri eDavkih, je potrebno izračunat koliko davka je bilo odvedenega,\n"
-          "pripisat konvencijo (MP, št., člen, odstavek) o preprečevanju dvojnega obdavčevanja in priložiti dokazila o plačanem davku...\n"
-          "Za davek po državah in konvencije glej:\n"
-          "https://www.gov.si/drzavni-organi/ministrstva/ministrstvo-za-finance/o-ministrstvu/direktorat-za-sistem-davcnih-carinskih-in-drugih-javnih-prihodkov/seznam-veljavnih-konvencij-o-izogibanju-dvojnega-obdavcevanja-dohodka-in-premozenja/.\n\n"
-          "Dodatni info: https://www.etoro.com/customer-service/help/1484910272/how-much-tax-is-deducted-from-my-dividends/")
 
     if missing_info:
         print("\n\n")
