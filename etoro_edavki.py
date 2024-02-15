@@ -914,12 +914,9 @@ def main():
 
             rate = get_exchange_rate(rates, date, ETORO_CURRENCY)
             withholding_tax_rate = float(xlsDividend.withholding_tax_rate.rstrip('%')) / 100.0
-            # old way
-            # withholding_tax_amount = str2float(xlsDividend.withholding_tax_amount) / rate
-            # gross_amount_eur = str2float(xlsDividend.net_dividend) / rate / (1 - withholding_tax_rate)
-            # new (but doesn't use BSRATE)
-            netto_amount_eur = str2float(xlsDividend.net_dividend_eur)
-            withholding_tax_amount = str2float(xlsDividend.withholding_tax_amount_eur)
+
+            netto_amount_eur = str2float(xlsDividend.net_dividend) / rate
+            withholding_tax_amount = str2float(xlsDividend.withholding_tax_amount) / rate
             gross_amount_eur = netto_amount_eur + withholding_tax_amount
 
             if symbol is None:
