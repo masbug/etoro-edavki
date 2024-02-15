@@ -939,68 +939,6 @@ def main():
 
             dividends.append(dividend)
 
-    ## Old version
-    # openPositions = {}
-    # for transactionSheet in transactionList:
-    #     if transactionSheet is None:
-    #         continue
-    #
-    #     for xlsTransaction in transactionSheet:
-    #         # Date	Account Balance	Type	Details	Position ID	Amount	Realized Equity Change	Realized Equity	NWA
-    #         if xlsTransaction.details is None:
-    #             continue
-    #
-    #         if xlsTransaction.type == "Open Position" or xlsTransaction.type == "Profit/Loss of Trade":
-    #             details_split = xlsTransaction.details.split("/", 1)
-    #             position_id = int(xlsTransaction.position_id)
-    #
-    #             open_pos = {
-    #                 "date": datetime.datetime.strptime(xlsTransaction.date, ETORO_DATETIME_FORMAT),
-    #                 "symbol": details_split[0].upper(),
-    #                 "currency": details_split[1]
-    #             }
-    #             openPositions[position_id] = open_pos
-    #             continue
-    #
-    #         if xlsTransaction.details.casefold().find("dividend") < 0:
-    #             continue
-    #
-    #         date = datetime.datetime.strptime(xlsTransaction.date, ETORO_DATETIME_FORMAT)
-    #         if date.year != reportYear:
-    #             # print("Skipping dividend (year: " + str(date.year) + "): " + str(xlsTransaction))
-    #             continue
-    #
-    #         position_id = int(xlsTransaction.position_id)
-    #
-    #         rate = get_exchange_rate(rates, date, ETORO_CURRENCY)
-    #         amount_eur = str2float(xlsTransaction.amount) / rate
-    #
-    #         if openPositions.get(position_id) is None:
-    #             print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarju [openPositions]!".format(position_id))
-    #             print("                    Verjetno vhodna datoteka ne zajema celotnega obdobja obdelanih finančnih instrumentov.")
-    #             sys.exit(1)
-    #
-    #         open_pos = openPositions[position_id]
-    #         symbol = open_pos["symbol"]
-    #
-    #         name = None
-    #         if position_id in allTradesByPositionID:
-    #             info = allTradesByPositionID[position_id]
-    #             name = info["name"]
-    #         if name is None and symbol in allTradesBySymbol:
-    #             info = allTradesBySymbol[symbol]
-    #             name = info["name"]
-    #
-    #
-    #         dividend = {
-    #             "position_id": position_id,
-    #             "amount_eur": amount_eur,
-    #             "date": date,
-    #             "name": name,
-    #             "symbol": symbol,
-    #             "currency": open_pos["currency"],
-    #         }
-    #         dividends.append(dividend)
 
     """ Merge multiple dividends or payments in lieu of dividends on the same day from the same company into a single entry """
     mergedDividends = []
