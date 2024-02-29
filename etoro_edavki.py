@@ -25,7 +25,7 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
-APP_VER = "1.6.5"
+APP_VER = "1.7.0"
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
@@ -386,8 +386,10 @@ def main():
             #close_price = str2float(xlsTrade.close_rate)
 
             open_price = amount / units
-            close_price = (amount + profit) / units
-
+            if buy_sell == "Buy":
+                close_price = (amount + profit) / units
+            elif buy_sell == "Sell":
+                close_price = (amount - profit) / units
 
             open_rate = get_exchange_rate(rates, open_date, ETORO_CURRENCY)
             if get_exchange_rate(rates, close_date, ETORO_CURRENCY) is None:
