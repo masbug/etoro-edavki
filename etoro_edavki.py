@@ -25,7 +25,7 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
-APP_VER = "1.7.0"
+APP_VER = "1.7.1 (3.8.2024)"
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
@@ -46,8 +46,16 @@ float_with_comma = False
 class ClosedPositionsSheet(TableSheet):
     # 2024: Position ID	Action	Amount	Units	Open Date	Close Date	Leverage	Spread Fees (USD)	Profit(USD)	Profit(EUR)	Open Rate
     #       Close Rate	Take profit rate	Stop lose rate	Rollover Fees and Dividends	Copied From	Type	ISIN	Notes
+
+    # 2024.7: Position ID	Action	Long / Short	Amount	Units	Open Date	Close Date	Leverage	Spread Fees (USD)	Market Spread (USD)	Profit(USD)	Profit(EUR)
+    # Open Rate Close Rate	Take profit rate	Stop lose rate	Overnight Fees and Dividends	Copied From	Type	ISIN	Notes
+
+    # 2024.8: Position ID	Action	Long / Short	Amount	Units	Open Date	Close Date	Leverage	Spread Fees (USD)	Market Spread (USD)	Profit(USD)	Profit(EUR)
+    # FX rate at open (USD)	FX rate at close (USD)	Open Rate	Close Rate	Take profit rate	Stop lose rate	Overnight Fees and Dividends	Copied From	Type	ISIN	Notes
+
     position_id = CharColumn(header="Position ID")
     action = CharColumn(header="Action")
+    long_short = CharColumn(header="Long / Short")
     amount = CharColumn(header="Amount")
     units = CharColumn(header="Units")
     open_date = CharColumn(header="Open Date")
@@ -57,11 +65,13 @@ class ClosedPositionsSheet(TableSheet):
     market_spread = CharColumn(header="Market Spread (USD)")
     profit = CharColumn(header="Profit(USD)")
     profit_eur = CharColumn(header="Profit(EUR)")
+    fx_open_rate = CharColumn(header="FX rate at open (USD)")
+    fx_close_rate = CharColumn(header="FX rate at close (USD)")
     open_rate = CharColumn(header="Open Rate")
     close_rate = CharColumn(header="Close Rate")
     take_profit_rate = CharColumn(header="Take profit rate")
     stop_loss_rate = CharColumn(header="Stop lose rate")
-    rollover_fees_and_dividends = CharColumn(header="Rollover Fees and Dividends")
+    overnight_fees_and_dividends = CharColumn(header="Overnight Fees and Dividends")
     trader = CharColumn(header="Copied From")
     type = CharColumn(header="Type")
     isin = CharColumn(header="ISIN")
@@ -366,7 +376,15 @@ def main():
             open_date = datetime.datetime.strptime(xlsTrade.open_date, ETORO_DATETIME_FORMAT)  # ex.: 02/06/2020 13:57
 
             action = xlsTrade.action.split(" ", 1)
-            buy_sell = action[0]
+            #buy_sell = action[0]
+            # quick fix
+            if xlsTrade.long_short == "Long":
+                buy_sell = "Buy"
+            elif xlsTrade.long_short == "Short":
+                buy_sell = "Sell"
+            else:
+                buy_sell = xlsTrade.long_short
+
             position_id = int(xlsTrade.position_id)
             name = action[1]
 
@@ -395,6 +413,7 @@ def main():
             #close_price = str2float(xlsTrade.close_rate)
 
             open_price = amount / units
+            close_price = 0
             if buy_sell == "Buy":
                 close_price = (amount + profit) / units
             elif buy_sell == "Sell":
