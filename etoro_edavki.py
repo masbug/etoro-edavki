@@ -299,7 +299,16 @@ def main():
     if not os.path.isfile(bsRateXmlFilename):
         for file in glob.glob("bsrate-*.xml"):
             os.remove(file)
-        urllib.request.urlretrieve(bsRateXmlUrl, bsRateXmlFilename)
+
+        # urllib.request.urlretrieve(bsRateXmlUrl, bsRateXmlFilename) # doesn't work because BSI now blocks this script...
+        # FU bsi!
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        req = urllib.request.Request(bsRateXmlUrl, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            data = response.read()
+            with open(bsRateXmlFilename, 'wb') as f:
+                f.write(data)
+
     bsRateXml = xml.etree.ElementTree.parse(bsRateXmlFilename).getroot()
 
     rates = {}
