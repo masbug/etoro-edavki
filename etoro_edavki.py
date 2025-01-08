@@ -25,7 +25,7 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
-APP_VER = "1.7.1 (3.8.2024)"
+APP_VER = "1.8.0 (8.1.2025)"
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
@@ -36,7 +36,7 @@ ETORO_CURRENCY = "USD"
 
 bsRateXmlUrl = "https://www.bsi.si/_data/tecajnice/dtecbs-l.xml"
 ignoreAssets = []
-derivateAssets = ["CFD", "OPT", "FUT", "FOP"]
+derivateAssets = ["CFD", "OPT", "FUT", "FOP", "Crypto Margin"]
 normalAssets = ["Stocks", "Crypto", "ETF"]
 
 dividendMarker = "Payment caused by dividend"
@@ -52,6 +52,9 @@ class ClosedPositionsSheet(TableSheet):
 
     # 2024.8: Position ID	Action	Long / Short	Amount	Units	Open Date	Close Date	Leverage	Spread Fees (USD)	Market Spread (USD)	Profit(USD)	Profit(EUR)
     # FX rate at open (USD)	FX rate at close (USD)	Open Rate	Close Rate	Take profit rate	Stop lose rate	Overnight Fees and Dividends	Copied From	Type	ISIN	Notes
+
+    # 2025.1: Position ID	Action	Long / Short	Amount	Units	Open Date	Close Date	Leverage	Spread Fees (USD)	Market Spread (USD)	Profit(USD)	Profit(EUR)
+    # FX rate at open (USD)	FX rate at close (USD)	Open Rate	Close Rate	Take profit rate	Stop loss rate	Overnight Fees and Dividends	Copied From	Type	Notes
 
     position_id = CharColumn(header="Position ID")
     action = CharColumn(header="Action")
@@ -70,11 +73,11 @@ class ClosedPositionsSheet(TableSheet):
     open_rate = CharColumn(header="Open Rate")
     close_rate = CharColumn(header="Close Rate")
     take_profit_rate = CharColumn(header="Take profit rate")
-    stop_loss_rate = CharColumn(header="Stop lose rate")
+    stop_loss_rate = CharColumn(header="Stop loss rate")
     overnight_fees_and_dividends = CharColumn(header="Overnight Fees and Dividends")
     trader = CharColumn(header="Copied From")
     type = CharColumn(header="Type")
-    isin = CharColumn(header="ISIN")
+    #isin = CharColumn(header="ISIN")
     notes = CharColumn(header="Notes")
 
 class AccountActivityReportSheet(TableSheet):
@@ -95,6 +98,8 @@ class AccountActivityReportSheet(TableSheet):
 class DividendsSheet(TableSheet):
     # 2024: Date of Payment	Instrument Name	Net Dividend Received (USD)	Net Dividend Received (EUR)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)
     #       Withholding Tax Amount (EUR)	Position ID	Type	ISIN
+    # 2025.1: Date of Payment	Instrument Name	Net Dividend Received (USD)	Net Dividend Received (EUR)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)
+    #       Withholding Tax Amount (EUR)	Position ID	Type
     date = CharColumn(header="Date of Payment")
     name = CharColumn(header="Instrument Name")
     net_dividend = CharColumn(header="Net Dividend Received (USD)")
@@ -104,7 +109,7 @@ class DividendsSheet(TableSheet):
     withholding_tax_amount_eur = CharColumn(header="Withholding Tax Amount (EUR)")
     position_id = CharColumn(header="Position ID")
     type = CharColumn(header="Type")
-    isin = CharColumn(header="ISIN")
+    #isin = CharColumn(header="ISIN")
 
 class EToroWorkbook(TemplatedWorkbook):
     closed_positions = ClosedPositionsSheet(sheetname='Closed Positions')
@@ -194,25 +199,25 @@ def get_position_symbols(transactionList):
             syms[position_id] = details_split[0].upper()
     return syms
 
-def update_position_symbols_from_dividends(dividendsList, companyList, syms):
-    for diviSheet in dividendsList:
-        if diviSheet is None:
-            continue
-
-        for xlsDividend in diviSheet:
-            position_id = int(xlsDividend.position_id)
-            if syms.get(position_id) is not None:
-                continue
-
-            companyInfo = get_company_info_by_isin(xlsDividend.isin, companyList)
-            if companyInfo is None:
-                print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarjih [openPositions, Company_info.xlxs]!".format(position_id))
-                print("                    Izvozi account statement za daljše obdobje oz. dodaj podatke za [ISIN={0}] v Company_info.xlxs.".format(xlsDividend.isin))
-                sys.exit(1)
-
-            syms[position_id] = companyInfo.symbol
-            # DEBUG print("!!! Found {0}: {1}, {2}".format(position_id, companyInfo.symbol, companyInfo.name))
-    return syms
+# def update_position_symbols_from_dividends(dividendsList, companyList, syms):
+#     for diviSheet in dividendsList:
+#         if diviSheet is None:
+#             continue
+#
+#         for xlsDividend in diviSheet:
+#             position_id = int(xlsDividend.position_id)
+#             if syms.get(position_id) is not None:
+#                 continue
+#
+#             companyInfo = get_company_info_by_isin(xlsDividend.isin, companyList)
+#             if companyInfo is None:
+#                 print("!!! POZOR / NAPAKA: Ključa [position_id={0}] ni v slovarjih [openPositions, Company_info.xlxs]!".format(position_id))
+#                 print("                    Izvozi account statement za daljše obdobje oz. dodaj podatke za [ISIN={0}] v Company_info.xlxs.".format(xlsDividend.isin))
+#                 sys.exit(1)
+#
+#             syms[position_id] = companyInfo.symbol
+#             # DEBUG print("!!! Found {0}: {1}, {2}".format(position_id, companyInfo.symbol, companyInfo.name))
+#     return syms
 
 def get_company_info(symbol, companyList):
     symbol = symbol.upper()
@@ -221,11 +226,11 @@ def get_company_info(symbol, companyList):
             return companyInfo
     return None
 
-def get_company_info_by_isin(isin, companyList):
-    for companyInfo in companyList:
-        if companyInfo.ISIN == isin:
-            return companyInfo
-    return None
+# def get_company_info_by_isin(isin, companyList):
+#     for companyInfo in companyList:
+#         if companyInfo.ISIN == isin:
+#             return companyInfo
+#     return None
 
 def str2float(num):
     global float_with_comma
@@ -358,7 +363,8 @@ def main():
     allTradesByPositionID = {}
     allTradesBySymbol = {}
     positionSymbols = get_position_symbols(transactionList)
-    positionSymbols = update_position_symbols_from_dividends(dividendsList, companyList, positionSymbols)
+    # when we have ISIN -> positionSymbols = update_position_symbols_from_dividends(dividendsList, companyList, positionSymbols)
+
     for tradeSheet in tradesList:
         if tradeSheet is None:
             continue
@@ -460,7 +466,7 @@ def main():
                 "quantity": units,
                 "trade_date": open_date,
                 "trade_price_eur": open_price_eur,
-                "isin": xlsTrade.isin,
+                ##"isin": xlsTrade.isin,
 
                 # extra info
                 "open_price_eur": open_price_eur,
@@ -481,7 +487,7 @@ def main():
                 "quantity": -units,
                 "trade_date": close_date,
                 "trade_price_eur": close_price_eur,
-                "isin": xlsTrade.isin,
+                ## "isin": xlsTrade.isin,
 
                 # extra info
                 "open_price_eur": open_price_eur,
@@ -563,7 +569,7 @@ def main():
             sh.append([
                 trade["symbol"],
                 trade["name"],
-                trade["isin"],
+                trade["isin"] if "isin" in trade else "",
                 "true" if trades[0]["is_etf"] else "false",
                 "Open" if trade["quantity"] > 0 else "Close",
                 trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT),
@@ -579,7 +585,7 @@ def main():
             sh.append([
                 trade["symbol"],
                 trade["name"],
-                trade["isin"],
+                trade["isin"] if "isin" in trade else "",
                 "true" if trades[0]["is_etf"] else "false",
                 "Open" if trade["quantity"] > 0 else "Close",
                 trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT),
@@ -596,7 +602,7 @@ def main():
             sh.append([
                 trade["symbol"],
                 trade["name"],
-                trade["isin"],
+                trade["isin"] if "isin" in trade else "",
                 "true" if trades[0]["is_etf"] else "false",
                 "Open" if trade["quantity"] > 0 else "Close",
                 trade["trade_date"].strftime(EDAVKI_DATETIME_FORMAT),
@@ -933,7 +939,8 @@ def main():
             if ETORO_DATETIME_FORMAT is None:
                 ETORO_DATETIME_FORMAT, float_with_comma = determine_date_format_and_comma(xlsDividend.date)
 
-            # Date of Payment	Instrument Name	Net Dividend Received (USD)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)	Position ID	Type	ISIN
+            # 2024   Date of Payment	Instrument Name	Net Dividend Received (USD)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)	Position ID	Type	ISIN
+            # 2025.1 Date of Payment	Instrument Name	Net Dividend Received (USD)	Withholding Tax Rate (%)	Withholding Tax Amount (USD)	Position ID	Type
             date = datetime.datetime.strptime(xlsDividend.date, ETORO_DATETIME_FORMAT)
             if date.year != reportYear:
                 # print("Skipping dividend (year: " + str(date.year) + "): " + str(xlsDividend))
@@ -963,8 +970,8 @@ def main():
                 "date": date,
                 "name": xlsDividend.name,
                 "symbol": symbol,
-                "currency": "USD",
-                "ISIN": xlsDividend.isin
+                "currency": "USD"
+                # "ISIN": xlsDividend.isin
             }
 
             dividends.append(dividend)
@@ -999,19 +1006,25 @@ def main():
     missing_info = []
     for dividend in dividends:
         companyInfo = get_company_info(dividend["symbol"], companyList)
-
         if companyInfo is not None:
-            if dividend["ISIN"] != companyInfo.ISIN:
-                errors.append([dividend["ISIN"], str(dividend), str(companyInfo)])
+            if "ISIN" in dividend:
+                if dividend["ISIN"] != companyInfo.ISIN:
+                    errors.append([dividend["ISIN"], str(dividend), str(companyInfo)])
+            else:
+                dividend["ISIN"] = companyInfo.ISIN
 
             dividend["address"] = companyInfo.address
             dividend["country"] = companyInfo.country_code
         elif not any(x["symbol"] == dividend["symbol"] for x in missing_info):
             missing_info.append({
                 "symbol": dividend["symbol"],
-                "ISIN": dividend["ISIN"],
                 "name": dividend["name"]
             })
+
+            if "ISIN" in dividend:
+                missing_info.append({
+                    "ISIN": dividend["ISIN"]
+                })
 
     if errors:
         print("!!! POZOR / NAPAKA:\n")
@@ -1120,7 +1133,7 @@ def main():
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         print("Manjkajo podatki o podjetjih za sledeče delnice:\n")
         for mi in missing_info:
-            print("{0}\t{1}\t{2}".format(mi["symbol"], mi["ISIN"], mi["name"]))
+            print("{0}\t{1}\t{2}".format(mi["symbol"], (mi["ISIN"] if "ISIN" in mi else ""), mi["name"]))
 
         print("Dodaj (in dopolni) zgornje podatke v Company_info.xlsx in ponovno poženi konverzijo! (Lahko nadaljuješ z oddajo, vendar bo potrebno te podatke ročno vnesti na eDavki.)")
         print("Podatke o naslovu je običajno mogoče poiskati z ISIN kodo ali simbolom na https://www.marketscreener.com/ pod zavihkom \"Company\".")
