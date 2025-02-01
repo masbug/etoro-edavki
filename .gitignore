@@ -1,0 +1,7 @@
+output/
+bsrate-*.xml
+taxpayer.xml
+
+# JetBrains IDEs
+.DS_Store
+.idea/
