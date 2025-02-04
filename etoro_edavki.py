@@ -25,7 +25,7 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
-APP_VER = "1.8.0 (8.1.2025)"
+APP_VER = "1.8.1 (4.2.2025)"
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
@@ -56,11 +56,14 @@ class ClosedPositionsSheet(TableSheet):
     # 2025.1: Position ID	Action	Long / Short	Amount	Units	Open Date	Close Date	Leverage	Spread Fees (USD)	Market Spread (USD)	Profit(USD)	Profit(EUR)
     # FX rate at open (USD)	FX rate at close (USD)	Open Rate	Close Rate	Take profit rate	Stop loss rate	Overnight Fees and Dividends	Copied From	Type	Notes
 
+    # 2025.2: Position ID	Action	Long / Short	Amount	Units / Contracts	Open Date	Close Date	Leverage	Spread Fees (USD)	Market Spread (USD)	Profit(USD)	Profit(EUR)
+    # FX rate at open (USD)	FX rate at close (USD)	Open Rate	Close Rate	Take profit rate	Stop loss rate	Overnight Fees and Dividends	Copied From	Type	Notes
+
     position_id = CharColumn(header="Position ID")
     action = CharColumn(header="Action")
     long_short = CharColumn(header="Long / Short")
     amount = CharColumn(header="Amount")
-    units = CharColumn(header="Units")
+    units = CharColumn(header="Units / Contracts")
     open_date = CharColumn(header="Open Date")
     close_date = CharColumn(header="Close Date")
     leverage = CharColumn(header="Leverage")
@@ -83,11 +86,12 @@ class ClosedPositionsSheet(TableSheet):
 class AccountActivityReportSheet(TableSheet):
     # 2022: Date	Type	Details	Amount	Realized Equity Change	Realized Equity	Balance	Position ID	NWA
     # 2023: Date	Type	Details	Amount	Units	Realized Equity Change	Realized Equity	Balance	Position ID	Asset type	NWA
+    # 2025.2: Date	Type	Details	Amount	Units / Contracts	Realized Equity Change	Realized Equity	Balance	Position ID	Asset type	NWA
     date = CharColumn(header="Date")
     type = CharColumn(header="Type")
     details = CharColumn(header="Details")
     amount = CharColumn(header="Amount")
-    units = CharColumn(header="Units")
+    units = CharColumn(header="Units / Contracts")
     realized_equity_change = CharColumn(header="Realized Equity Change")
     realized_equity = CharColumn(header="Realized Equity")
     account_balance = CharColumn(header="Balance")
