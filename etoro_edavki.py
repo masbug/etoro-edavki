@@ -80,7 +80,7 @@ class ClosedPositionsSheet(TableSheet):
     overnight_fees_and_dividends = CharColumn(header="Overnight Fees and Dividends")
     trader = CharColumn(header="Copied From")
     type = CharColumn(header="Type")
-    #isin = CharColumn(header="ISIN")
+    isin = CharColumn(header="ISIN")
     notes = CharColumn(header="Notes")
 
 class AccountActivityReportSheet(TableSheet):
