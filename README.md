@@ -77,19 +77,5 @@ Obrazec Doh-Div zahteva dodatne podatke o podjetju, ki je izplačalo dividende (
 5. Klikni **Izračun**.
 6. Preveri če vse pridobitve in odsvojitve ustrezajo dejanskim. Zaloga pri zadnjem vnosu mora biti **0**.
 
-ali
-
-1. V meniju **Dokumenti > Nov dokument** izberi obrazec Doh-KDVP (za trgovanje z vrednostnimi papirji na dolgo) ali D-IFI (za trgovanje z vrednostnimi papirji na kratko in trgovanje z izvedenimi finančnimi inštrumenti).
-2. Izbira obdobja naj bo lansko leto.
-3. Vrsta dokumenta naj bo **O**.
-4. Izberi **Nov prazen dokument**.
-5. Klikni **Uvoz popisnih listov** in izberi ustrezno datoteko (Doh-KDVP.xml za obrazec Doh-KDVP, D-IFI.xml za obrazec D-IFI) in klikni **Uvozi**.
-6. Preveri izpolnjene podatke in dodaj manjkajoče.
-7. Na seznamu popisnih listov se bo pojavil po en popisni list za vsak vrednostni papir (ticker).
-8. Klikni na ime vrednostnega papirja in odpri popisni list.
-9. Klikni **Izračun**.
-10. Preveri če vse pridobitve in odsvojitve ustrezajo dejanskim. Zaloga pri zadnjem vnosu mora biti **0**.
-
-
 ### Viri
 _Osnova za to skripto je IB -> eDavki konverter: https://github.com/jamsix/ib-edavki (Copyright (c) 2020 Primož Sečnik Kolman; MIT Licenca)_
