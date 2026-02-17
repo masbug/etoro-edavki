@@ -25,7 +25,7 @@ from openpyxl_templates.table_sheet import TableSheet
 from openpyxl_templates.table_sheet.columns import CharColumn
 from operator import itemgetter
 
-APP_VER = "1.8.3 (20.11.2025)"
+APP_VER = "1.8.4 (17.02.2026)"
 
 EDAVKI_DATETIME_FORMAT = "%Y-%m-%d"
 ETORO_DATETIME_FORMAT_EN1 = "%d/%m/%Y %H:%M:%S"
@@ -427,16 +427,23 @@ def main():
             units = str2float(xlsTrade.units)
             profit = str2float(xlsTrade.profit)
 
-            # open & close prices are bogus in eToro statement... calculate it from amount and profit
-            #open_price = str2float(xlsTrade.open_rate)
-            #close_price = str2float(xlsTrade.close_rate)
+            if xlsTrade.fx_open_rate == "-":
+                fx_open_rate = 1
+                fx_close_rate = 1
+            else:
+                fx_open_rate = str2float(xlsTrade.fx_open_rate)
+                fx_close_rate = str2float(xlsTrade.fx_close_rate)
 
-            open_price = amount / units
-            close_price = 0
-            if buy_sell == "Buy":
-                close_price = (amount + profit) / units
-            elif buy_sell == "Sell":
-                close_price = (amount - profit) / units
+            # correct rates for FX
+            open_price = str2float(xlsTrade.open_rate) * fx_open_rate
+            close_price = str2float(xlsTrade.close_rate) * fx_close_rate
+
+            #open_price = amount / units
+            #close_price = 0
+            #if buy_sell == "Buy":
+            #    close_price = (amount + profit) / units
+            #elif buy_sell == "Sell":
+            #    close_price = (amount - profit) / units
 
             open_rate = get_exchange_rate(rates, open_date, ETORO_CURRENCY)
             if get_exchange_rate(rates, close_date, ETORO_CURRENCY) is None:
